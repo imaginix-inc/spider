@@ -1,11 +1,9 @@
-from spiders import spiders, Spider
-from process import post_process
-from dataset import AsyncSessionLocal, async_engine, engine
+from .spiders import spiders, Spider
+from src.process import post_process
+from .dataset import AsyncSessionLocal, async_engine, engine
 from sqlalchemy import insert
 import asyncio
 from tqdm import tqdm
-import dotenv
-dotenv.load_dotenv()
 
 
 async def process_school(spider: Spider):

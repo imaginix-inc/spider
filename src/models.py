@@ -33,7 +33,7 @@ class USCCourseDB(BaseDB):
     grade_scheme = mapped_column(String)
     registered = mapped_column(String)
     total_seats = mapped_column(String)
-    from schools.ucr.extract import Course
+    from src.schools.ucr.extract import Course
 
     @ classmethod
     def from_pydantic(cls, course: Course):

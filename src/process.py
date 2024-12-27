@@ -1,5 +1,5 @@
 from typing import List
-from models import BaseDB
+from src.models import BaseDB
 from openai import AsyncClient
 from openai.types import CreateEmbeddingResponse
 from sqlalchemy.sql import func

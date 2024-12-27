@@ -1,7 +1,7 @@
 from typing import Callable, Awaitable, List
-from schools import ucr
-from models import BaseDB, DeclarativeBase
-import models
+from .schools import ucr
+from .models import BaseDB, DeclarativeBase
+from . import models
 
 
 class Spider:
