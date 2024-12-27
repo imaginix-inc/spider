@@ -4,9 +4,11 @@ from .dataset import AsyncSessionLocal, async_engine, engine
 from sqlalchemy import insert
 import asyncio
 from tqdm import tqdm
+import time
 
 
-async def process_school(spider: Spider):
+async def process_school(spider: Spider) -> float:
+    begin_time = time.time()
     datas = await spider.func()
     pbar = tqdm(total=len(datas), desc=f"Processing {spider.school_name}")
     spider.scheme.metadata.drop_all(engine)
@@ -19,13 +21,16 @@ async def process_school(spider: Spider):
             await session.commit()
 
     pbar.close()
+    return time.time() - begin_time
 
 
 async def execute():
     tasks = []
     for spider in spiders:
         tasks.append(process_school(spider))
-    await asyncio.gather(*tasks)
+    spend_time = await asyncio.gather(*tasks)
+    for (spider, time) in zip(spiders, spend_time):
+        print(f"{spider.school_name} spend {time} seconds")
 
 if __name__ == '__main__':
     asyncio.run(execute())
