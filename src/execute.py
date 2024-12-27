@@ -15,8 +15,6 @@ async def process_school(spider: Spider) -> float:
     spider.scheme.metadata.create_all(engine)
     async with AsyncSessionLocal() as session:
         async with session.begin():
-
-            chunk_size = 1000
             session.add_all(datas)
             await session.commit()
 

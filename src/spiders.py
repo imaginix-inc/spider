@@ -1,5 +1,5 @@
 from typing import Callable, Awaitable, List
-from .schools import ucr
+from .schools import ucr, usf
 from .models import BaseDB, DeclarativeBase
 from . import models
 
@@ -13,4 +13,5 @@ class Spider:
 
 spiders: List[Spider] = [
     Spider(school_name='ucr', func=ucr.main, scheme=models.USCCourseDB),
+    Spider(school_name='usf', func=usf.main, scheme=models.USFCourseDB)
 ]

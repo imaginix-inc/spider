@@ -1,3 +1,4 @@
+from src.schools.ucr.extract import Course
 from langchain_text_splitters import CharacterTextSplitter
 import asyncio
 import httpx
@@ -18,6 +19,21 @@ urls = urls[:2]
 text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
     encoding_name="o200k_base", chunk_size=200, chunk_overlap=30
 )
+
+
+def from_pydantic(course: Course):
+    return USCCourseDB(
+        section=course.section,
+        units=course.units,
+        offering_title=course.offering_title,
+        instructor=course.instructor,
+        days=course.days,
+        time=course.time,
+        location=course.location,
+        grade_scheme=course.grade_scheme,
+        registered=course.registered,
+        total_seats=course.total_seats
+    )
 
 
 async def process_url(client: httpx.AsyncClient, url: str, sem: Semaphore) -> list:
@@ -58,7 +74,7 @@ async def main() -> List[BaseDB]:
             all_courses.extend(courses)
     progress.close()
     all_courses: List[USCCourseDB] = list(
-        map(USCCourseDB.from_pydantic, all_courses))
+        map(from_pydantic, all_courses))
     all_courses = await post_process(all_courses, [course.offering_title for course in all_courses], [
         course.offering_title for course in all_courses])
     return all_courses

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, mapped_column
-from sqlalchemy import Integer, String, DateTime, func, SmallInteger, BigInteger
+from sqlalchemy import Integer, String, DateTime, func, SmallInteger, BigInteger, Float
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.ext.declarative import DeferredReflection
@@ -33,19 +33,29 @@ class USCCourseDB(BaseDB):
     grade_scheme = mapped_column(String)
     registered = mapped_column(String)
     total_seats = mapped_column(String)
-    from src.schools.ucr.extract import Course
 
-    @ classmethod
-    def from_pydantic(cls, course: Course):
-        return cls(
-            section=course.section,
-            units=course.units,
-            offering_title=course.offering_title,
-            instructor=course.instructor,
-            days=course.days,
-            time=course.time,
-            location=course.location,
-            grade_scheme=course.grade_scheme,
-            registered=course.registered,
-            total_seats=course.total_seats
-        )
+
+class USFCourseDB(BaseDB):
+    __tablename__ = 'usf_courses'
+    term = mapped_column(String(50))
+    course_code = mapped_column(String(20))
+    section = mapped_column(String(10))
+    campus = mapped_column(String(100))
+    schedule_type = mapped_column(String(50))
+    instructional_method = mapped_column(String(50))
+    credits = mapped_column(Float)
+    capacity = mapped_column(Integer)
+    actual = mapped_column(Integer)
+    remaining = mapped_column(Integer)
+    waitlist_capacity = mapped_column(Integer)
+    waitlist_actual = mapped_column(Integer)
+    waitlist_remaining = mapped_column(Integer)
+    field_of_study = mapped_column(String(100))
+    prerequisite_course = mapped_column(String(20))
+    minimum_grade = mapped_column(String(2))
+
+    def __repr__(self):
+        # 自动获取所有字段及其值
+        fields = {column.name: getattr(self, column.name)
+                  for column in self.__table__.columns}
+        return f"<User({fields})>"
