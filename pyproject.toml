@@ -11,6 +11,16 @@ sqlalchemy = "^2.0.36"
 asyncpg = "^0.30.0"
 pgvector = "^0.3.6"
 openai = "^1.58.1"
+pandas = "^2.2.3"
+langchain-text-splitters = "^0.3.4"
+beautifulsoup4 = "^4.12.3"
+langchain-openai = "^0.2.14"
+langchain = "^0.3.13"
+snowflake-id = "^1.0.2"
+typing-extensions = "^4.12.2"
+python-dotenv = "^1.0.1"
+greenlet = "^3.1.1"
+psycopg2 = "^2.9.10"
 
 
 [build-system]
