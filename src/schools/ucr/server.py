@@ -26,7 +26,7 @@ def from_pydantic(course: Course):
         section=course.section,
         units=course.units,
         offering_title=course.offering_title,
-        instructor=course.instructor,
+        instructor_name=course.instructor,
         days=course.days,
         time=course.time,
         location=course.location,

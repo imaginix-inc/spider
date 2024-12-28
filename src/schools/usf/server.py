@@ -136,6 +136,7 @@ async def load_class(link: str) -> BaseDB:
     data: CourseModel = await structured_llm.ainvoke(prompt)
     data: USFCourseDB = map_course_model_to_db(data)
     data = (await post_process([data], [data.course_code], [data.course_code]))[0]
+    data.source_url = link
     return data
 
 

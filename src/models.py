@@ -18,6 +18,7 @@ class BaseDB(DeclarativeBase):
     tenant_id = mapped_column(BigInteger, nullable=False, default=0)
     name_vector = mapped_column(Vector)
     search_vector = mapped_column(TSVECTOR)
+    instructor_name = mapped_column(String)
 
 
 class USCCourseDB(BaseDB):
@@ -26,7 +27,7 @@ class USCCourseDB(BaseDB):
     section = mapped_column(String)
     units = mapped_column(String)
     offering_title = mapped_column(String)
-    instructor = mapped_column(String)
+
     days = mapped_column(String)
     time = mapped_column(String)
     location = mapped_column(String)
@@ -53,9 +54,3 @@ class USFCourseDB(BaseDB):
     field_of_study = mapped_column(String(100))
     prerequisite_course = mapped_column(String(20))
     minimum_grade = mapped_column(String(2))
-
-    def __repr__(self):
-        # 自动获取所有字段及其值
-        fields = {column.name: getattr(self, column.name)
-                  for column in self.__table__.columns}
-        return f"<User({fields})>"
