@@ -59,3 +59,28 @@ class USFCourseDB(BaseDB):
         fields = {column.name: getattr(self, column.name)
                   for column in self.__table__.columns}
         return f"<User({fields})>"
+
+
+class UCSCCourseDB(BaseDB):
+    __tablename__ = 'ucsc_courses'
+    subject = mapped_column(String)
+    number = mapped_column(String)
+    display_name = mapped_column(String)
+    instruction_mode = mapped_column(String)
+    academic_group = mapped_column(String)
+    start_date = mapped_column(String)
+    end_date = mapped_column(String)
+    status = mapped_column(String)
+    enrolled_count = mapped_column(Integer)
+    max_enroll = mapped_column(Integer)
+    waitlisted_count = mapped_column(Integer)
+    max_waitlist = mapped_column(Integer)
+    instructor_name = mapped_column(String)
+    course_name = mapped_column(String)
+    term = mapped_column(String)
+    days = mapped_column(String)
+    start_time = mapped_column(String)
+    end_time = mapped_column(String)
+    units = mapped_column(Integer)
+
+
