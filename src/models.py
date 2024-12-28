@@ -1,8 +1,9 @@
-from sqlalchemy.orm import DeclarativeBase, mapped_column
+from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 from sqlalchemy import Integer, String, DateTime, func, SmallInteger, BigInteger, Float
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.ext.declarative import DeferredReflection
+from typing import Optional
 
 
 class BaseDB(DeclarativeBase):
@@ -39,18 +40,42 @@ class USCCourseDB(BaseDB):
 class USFCourseDB(BaseDB):
     __tablename__ = 'usf_courses'
     term = mapped_column(String(50))
-    course_code = mapped_column(String(20))
-    section = mapped_column(String(10))
-    campus = mapped_column(String(100))
+    time = mapped_column(String(50))
+    days = mapped_column(String(50))
+    classroom = mapped_column(String(50))
+    date_range = mapped_column(String(50))
     schedule_type = mapped_column(String(50))
-    instructional_method = mapped_column(String(50))
-    credits = mapped_column(Float)
-    capacity = mapped_column(Integer)
-    actual = mapped_column(Integer)
-    remaining = mapped_column(Integer)
-    waitlist_capacity = mapped_column(Integer)
-    waitlist_actual = mapped_column(Integer)
-    waitlist_remaining = mapped_column(Integer)
-    field_of_study = mapped_column(String(100))
-    prerequisite_course = mapped_column(String(20))
-    minimum_grade = mapped_column(String(2))
+    title = mapped_column(String(100))
+    course_type = mapped_column(String(20))
+    term: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, doc="The term of the course")
+    course_code: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True, doc="The course code")
+    section: Mapped[Optional[str]] = mapped_column(
+        String(10), nullable=True, doc="The section of the course")
+    campus: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True, doc="The campus where the course is offered")
+    schedule_type: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, doc="The schedule type of the course")
+    instructional_method: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, doc="The instructional method used in the course")
+    credits: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True, doc="The number of credits for the course")
+    capacity: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True, doc="The capacity of the course")
+    actual: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True, doc="The actual number of enrolled students")
+    remaining: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True, doc="The remaining seats available")
+    waitlist_capacity: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True, doc="The capacity of the waitlist")
+    waitlist_actual: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True, doc="The actual number of students on the waitlist")
+    waitlist_remaining: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True, doc="The remaining spots on the waitlist")
+    field_of_study: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True, doc="The field of study of the course")
+    prerequisite_course: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True, doc="The prerequisite course code")
+    minimum_grade: Mapped[Optional[str]] = mapped_column(
+        String(2), nullable=True, doc="The minimum grade required")
