@@ -5,7 +5,7 @@ from tqdm.asyncio import tqdm
 
 async def process_school(school_id: int, table_name: str, field_name: str):
     async with httpx.AsyncClient() as client:
-        async with aconnect_sse(client, "GET", "http://localhost:8080/api/v1/spider/rateMyProfessor", params={
+        async with aconnect_sse(client, "GET", "https://java-rumi-test.fly.dev/api/v1/spider/rateMyProfessor", params={
             'field': field_name,
             'tableName': table_name,
             'schoolId': school_id
