@@ -7,6 +7,7 @@ from typing import List, Optional, Dict, Any
 from src.models import USFCourseDB, BaseDB
 from src.process import post_process
 from pydantic import BaseModel, Field
+from settings import settings
 
 
 class CourseModel(BaseModel):
@@ -129,7 +130,7 @@ async def load_class(link: str) -> BaseDB:
         response = await client.get(link)
         soup = BeautifulSoup(response.text, 'html.parser')
     llm = ChatOpenAI(
-        model="gpt-4o-mini", max_retries=5, timeout=30)
+        model="gpt-4o-mini", max_retries=5, timeout=30, api_key=settings.openai_api_key)
     structured_llm = llm.with_structured_output(schema=CourseModel)
 
     prompt: List[Dict[str, Any]] = await prompt_template.ainvoke({"text": soup.get_text()})
