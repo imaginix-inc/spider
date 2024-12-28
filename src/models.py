@@ -8,55 +8,58 @@ from typing import Optional
 
 class BaseDB(DeclarativeBase):
     __abstract__ = True
-    id = mapped_column(BigInteger, primary_key=True)
-    source_url = mapped_column(String)
-    remark = mapped_column(String)
-    creator = mapped_column(String, default='')
-    create_time = mapped_column(DateTime, nullable=False, default=func.now())
-    updater = mapped_column(String, default='')
-    update_time = mapped_column(DateTime, nullable=False, default=func.now())
-    deleted = mapped_column(SmallInteger, nullable=False, default=0)
-    tenant_id = mapped_column(BigInteger, nullable=False, default=0)
-    name_vector = mapped_column(Vector)
-    search_vector = mapped_column(TSVECTOR)
-    instructor_name = mapped_column(String)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    source_url: Mapped[str] = mapped_column(String)
+    remark: Mapped[str] = mapped_column(String)
+    creator: Mapped[str] = mapped_column(String, default='')
+    create_time: Mapped[DateTime] = mapped_column(
+        DateTime, nullable=False, default=func.now())
+    updater: Mapped[str] = mapped_column(String, default='')
+    update_time: Mapped[DateTime] = mapped_column(
+        DateTime, nullable=False, default=func.now())
+    deleted: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, default=0)
+    tenant_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, default=0)
+    name_vector: Mapped[Vector] = mapped_column(Vector)
+    search_vector: Mapped[TSVECTOR] = mapped_column(TSVECTOR)
+    instructor_name: Mapped[str] = mapped_column(String)
 
 
 class USCCourseDB(BaseDB):
     __abstract__ = False
     __tablename__ = 'usc_courses'
-    section = mapped_column(String)
-    units = mapped_column(String)
-    offering_title = mapped_column(String)
-
-    days = mapped_column(String)
-    time = mapped_column(String)
-    location = mapped_column(String)
-    grade_scheme = mapped_column(String)
-    registered = mapped_column(String)
-    total_seats = mapped_column(String)
+    section: Mapped[str] = mapped_column(String)
+    units: Mapped[str] = mapped_column(String)
+    offering_title: Mapped[str] = mapped_column(String)
+    days: Mapped[str] = mapped_column(String)
+    time: Mapped[str] = mapped_column(String)
+    location: Mapped[str] = mapped_column(String)
+    grade_scheme: Mapped[str] = mapped_column(String)
+    registered: Mapped[str] = mapped_column(String)
+    total_seats: Mapped[str] = mapped_column(String)
 
 
 class USFCourseDB(BaseDB):
     __tablename__ = 'usf_courses'
-    term = mapped_column(String(50))
-    time = mapped_column(String(50))
-    days = mapped_column(String(50))
-    classroom = mapped_column(String(50))
-    date_range = mapped_column(String(50))
-    schedule_type = mapped_column(String(50))
-    title = mapped_column(String(100))
-    course_type = mapped_column(String(20))
     term: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, doc="The term of the course")
+    time: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    days: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    classroom: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    date_range: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True)
+    schedule_type: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, doc="The schedule type of the course")
+    title: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    course_type: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True)
     course_code: Mapped[Optional[str]] = mapped_column(
         String(20), nullable=True, doc="The course code")
     section: Mapped[Optional[str]] = mapped_column(
         String(10), nullable=True, doc="The section of the course")
     campus: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, doc="The campus where the course is offered")
-    schedule_type: Mapped[Optional[str]] = mapped_column(
-        String(50), nullable=True, doc="The schedule type of the course")
     instructional_method: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, doc="The instructional method used in the course")
     credits: Mapped[Optional[str]] = mapped_column(
