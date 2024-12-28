@@ -18,6 +18,7 @@ class BaseDB(DeclarativeBase):
     tenant_id = mapped_column(BigInteger, nullable=False, default=0)
     name_vector = mapped_column(Vector)
     search_vector = mapped_column(TSVECTOR)
+    instructor_name = mapped_column(String)
 
 
 class USCCourseDB(BaseDB):
@@ -26,7 +27,7 @@ class USCCourseDB(BaseDB):
     section = mapped_column(String)
     units = mapped_column(String)
     offering_title = mapped_column(String)
-    instructor = mapped_column(String)
+
     days = mapped_column(String)
     time = mapped_column(String)
     location = mapped_column(String)
@@ -82,5 +83,4 @@ class UCSCCourseDB(BaseDB):
     start_time = mapped_column(String)
     end_time = mapped_column(String)
     units = mapped_column(Integer)
-
 

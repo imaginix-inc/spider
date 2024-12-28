@@ -5,14 +5,16 @@ from . import models
 
 
 class Spider:
-    def __init__(self, school_name: str, func: Callable[[], Awaitable[List[BaseDB]]], scheme: DeclarativeBase):
+    def __init__(self, school_name: str, func: Callable[[], Awaitable[List[BaseDB]]], scheme: DeclarativeBase, school_id: int):
         self.school_name = school_name
         self.func = func
         self.scheme = scheme
+        self.school_id = school_id
 
 
 spiders: List[Spider] = [
-    Spider(school_name='ucr', func=ucr.main, scheme=models.USCCourseDB),
-    Spider(school_name='usf', func=usf.main, scheme=models.USFCourseDB),
-    Spider(school_name='ucsc', func=ucsc.main, scheme=models)
+    Spider(school_name='ucr', func=ucr.main,
+           scheme=models.USCCourseDB, school_id=111),
+    Spider(school_name='usf', func=usf.main,
+           scheme=models.USFCourseDB, school_id=112),
 ]
