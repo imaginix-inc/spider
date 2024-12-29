@@ -99,4 +99,4 @@ async def extract(segs: List[str]) -> List[Dict[str, Any]]:
 if __name__ == "__main__":
     import asyncio
 
-    asyncio.run(extract(open('tmp.txt')))
+    asyncio.run(extract([open('tmp.txt', 'r').read()]))

@@ -61,7 +61,7 @@ class CourseModel(BaseModel):
     )
 
 
-async def get_course_links() -> List[str]:
+async def get_course_links() -> List[BaseDB]:
     async with httpx.AsyncClient() as client:
         response = await client.post(
             "https://ssb-prod.ec.usfca.edu/PROD/bwckschd.p_get_crse_unsec",
