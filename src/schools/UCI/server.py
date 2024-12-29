@@ -12,7 +12,7 @@ from typing import Optional, List, Set
 
 class Course(BaseModel):
     """Information about a UC Davis course."""
-    
+
     title: Optional[str] = Field(
         default=None, description="The title of the course"
     )
@@ -107,7 +107,7 @@ async def fetch_crns(client: httpx.AsyncClient, term_code="202501", subject="-")
     Fetch unique course CRNs from the UC Davis registrar using a POST request.
     """
     url = "https://registrar-apps.ucdavis.edu/courses/search/course_search_results.cfm"
-    
+
     payload = {
         "termCode": term_code,
         "subject": subject,
@@ -163,7 +163,7 @@ async def extract_course_data(client: httpx.AsyncClient, crn: str, term_code="20
         "crn": crn
     }
     url = "https://registrar-apps.ucdavis.edu/courses/search/course.cfm"
-    
+
     try:
         response = await client.post(url, data=payload)
         if response.status_code != 200:
@@ -173,7 +173,7 @@ async def extract_course_data(client: httpx.AsyncClient, crn: str, term_code="20
             print(f"Payload: {payload}")
             print(f"Response text: {response.text[:500]}...")  # Print first 500 chars of response
             return Course()
-            
+
         html_content = response.text
         soup = BeautifulSoup(html_content, 'html.parser')
 
@@ -285,16 +285,16 @@ async def main() :
     """
     all_courses = []
     semaphore = asyncio.Semaphore(5)  # Limit concurrent requests
-    
+
     async with httpx.AsyncClient(timeout=30.0) as client:
         tasks = []
         for subject in subjects:
             tasks.append(process_subject(client, subject, semaphore))
-        
+
         results = await asyncio.gather(*tasks)
         for courses in results:
             all_courses.extend(courses)
-    
+
     print(all_courses)
 
     # Convert to database models and post-process
@@ -308,5 +308,3 @@ async def main() :
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-

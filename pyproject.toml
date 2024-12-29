@@ -25,6 +25,9 @@ httpx = {extras = ["socks"], version = "^0.28.1"}
 httpx-sse = "^0.4.0"
 
 
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.0.1"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
