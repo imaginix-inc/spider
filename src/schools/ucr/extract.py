@@ -1,9 +1,9 @@
 from typing import List, Dict, Any
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 from typing import Optional
-from settings import settings
+from src.settings import settings
 
 
 class Course(BaseModel):
@@ -38,6 +38,7 @@ class Course(BaseModel):
     )
     total_seats: Optional[str] = Field(
         default=None, description="The total number of seats")
+    _source_url: str = PrivateAttr(default=None)
 
 
 class Data(BaseModel):
@@ -66,7 +67,7 @@ prompt_template = ChatPromptTemplate.from_messages(
 )
 
 
-async def extract(segs: List[str]) -> List[Dict[str, Any]]:
+async def extract(segs: List[str], url: str) -> List[Course]:
     segs = list(filter(lambda x: len(x) > 0, segs))
     # Split segments longer than 1000 characters
     new_segs = []
@@ -85,15 +86,16 @@ async def extract(segs: List[str]) -> List[Dict[str, Any]]:
     prompt: List[Dict[str, Any]] = await prompt_template.abatch([{"text": text} for text in segs])
     data_list: List[Data] = await structured_llm.abatch(prompt, {
         'max_concurrency': 15,
-
     })
 
     # Flatten course data
 
-    all_courses: List[Dict[str, Any]] = [course
-                                         for data in data_list
-                                         for course in (data.courses or [])]
-
+    all_courses: List[Course] = [course
+                                 for data in data_list
+                                 for course in (data.courses or [])]
+    # set all_courses' source url
+    for course in all_courses:
+        course._source_url = url
     return all_courses
 
 

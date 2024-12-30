@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import create_engine
 import os
-from settings import settings
+from src.settings import settings
 async_engine = create_async_engine(
     settings.dataset_url.replace('postgresql', 'postgresql+asyncpg'))
 engine = create_engine(settings.dataset_url

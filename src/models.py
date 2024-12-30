@@ -9,8 +9,8 @@ from typing import Optional
 class BaseDB(DeclarativeBase):
     __abstract__ = True
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    source_url: Mapped[str] = mapped_column(String)
-    remark: Mapped[str] = mapped_column(String)
+    source_url: Mapped[str] = mapped_column(String, nullable=True)
+    remark: Mapped[str] = mapped_column(String, nullable=True)
     creator: Mapped[str] = mapped_column(String, default='')
     create_time: Mapped[DateTime] = mapped_column(
         DateTime, nullable=False, default=func.now())
@@ -21,23 +21,24 @@ class BaseDB(DeclarativeBase):
         SmallInteger, nullable=False, default=0)
     tenant_id: Mapped[int] = mapped_column(
         BigInteger, nullable=False, default=0)
-    name_vector: Mapped[Vector] = mapped_column(Vector)
-    search_vector: Mapped[TSVECTOR] = mapped_column(TSVECTOR)
-    instructor_name: Mapped[str] = mapped_column(String)
+    name_vector: Mapped[Vector] = mapped_column(Vector, nullable=True)
+    search_vector: Mapped[TSVECTOR] = mapped_column(TSVECTOR, nullable=True)
+    instructor_name: Mapped[str] = mapped_column(String, nullable=True)
 
 
-class USCCourseDB(BaseDB):
+class UCRCourseDB(BaseDB):
     __abstract__ = False
-    __tablename__ = 'usc_courses'
-    section: Mapped[str] = mapped_column(String)
-    units: Mapped[str] = mapped_column(String)
-    offering_title: Mapped[str] = mapped_column(String)
-    days: Mapped[str] = mapped_column(String)
-    time: Mapped[str] = mapped_column(String)
-    location: Mapped[str] = mapped_column(String)
-    grade_scheme: Mapped[str] = mapped_column(String)
-    registered: Mapped[str] = mapped_column(String)
-    total_seats: Mapped[str] = mapped_column(String)
+    __tablename__ = 'ucr_courses'
+    section: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    units: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    offering_title: Mapped[Optional[str]
+                           ] = mapped_column(String, nullable=True)
+    days: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    grade_scheme: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    registered: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    total_seats: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
 
 class USFCourseDB(BaseDB):

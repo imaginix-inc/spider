@@ -23,6 +23,7 @@ greenlet = "^3.1.1"
 psycopg2 = "^2.9.10"
 httpx = {extras = ["socks"], version = "^0.28.1"}
 httpx-sse = "^0.4.0"
+pydantic-settings = "^2.7.0"
 
 
 [tool.poetry.group.dev.dependencies]

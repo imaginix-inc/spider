@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from .extract import extract
 from asyncio import Semaphore
 from typing import List
-from src.models import USCCourseDB, BaseDB
+from src.models import UCRCourseDB, BaseDB
 from sqlalchemy import insert
 from tqdm import tqdm
 from src.dataset import AsyncSessionLocal
@@ -22,7 +22,8 @@ text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
 
 
 def from_pydantic(course: Course):
-    return USCCourseDB(
+    return UCRCourseDB(
+        source_url=course._source_url,
         section=course.section,
         units=course.units,
         offering_title=course.offering_title,
@@ -46,7 +47,7 @@ async def process_url(client: httpx.AsyncClient, url: str, sem: Semaphore) -> li
             soup = BeautifulSoup(text, 'html.parser')
             text = soup.get_text()
             segments = text.split('\n')
-            result = await extract(segments)
+            result = await extract(segments, url)
             return result
         except Exception as e:
             print(f"Error processing {url}: {e}")
@@ -73,11 +74,11 @@ async def main() -> List[BaseDB]:
         for courses in results:
             all_courses.extend(courses)
     progress.close()
-    all_courses_db: List[USCCourseDB] = list(
+    all_courses_db: List[UCRCourseDB] = list(
         map(from_pydantic, all_courses))
-    all_courses = await post_process(all_courses, [course.offering_title for course in all_courses], [
+    all_courses_db = await post_process(all_courses_db, [course.offering_title for course in all_courses], [
         course.offering_title for course in all_courses])
-    return all_courses
+    return all_courses_db
 
 
 if __name__ == "__main__":

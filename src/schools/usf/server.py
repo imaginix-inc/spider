@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Any
 from src.models import USFCourseDB, BaseDB
 from src.process import post_process
 from pydantic import BaseModel, Field
-from settings import settings
+from src.settings import settings
 
 
 class CourseModel(BaseModel):
@@ -58,7 +58,7 @@ class CourseModel(BaseModel):
         default=None, description="The prerequisite course code", max_length=20
     )
     minimum_grade: Optional[str] = Field(
-        default=None, description="The minimum grade required", max_length=2
+        default=None, description="The minimum grade required"
     )
 
 
