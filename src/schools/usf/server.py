@@ -2,6 +2,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 import httpx
 from bs4 import BeautifulSoup
+import bs4
 import asyncio
 from typing import List, Optional, Dict, Any
 from src.models import USFCourseDB, BaseDB
@@ -61,28 +62,7 @@ class CourseModel(BaseModel):
     )
 
 
-def map_course_model_to_db(course_model: CourseModel) -> USFCourseDB:
-    return USFCourseDB(
-        term=course_model.term,
-        course_code=course_model.course_code,
-        section=course_model.section,
-        campus=course_model.campus,
-        schedule_type=course_model.schedule_type,
-        instructional_method=course_model.instructional_method,
-        credits=course_model.credits,
-        capacity=course_model.capacity,
-        actual=course_model.actual,
-        remaining=course_model.remaining,
-        waitlist_capacity=course_model.waitlist_capacity,
-        waitlist_actual=course_model.waitlist_actual,
-        waitlist_remaining=course_model.waitlist_remaining,
-        field_of_study=course_model.field_of_study,
-        prerequisite_course=course_model.prerequisite_course,
-        minimum_grade=course_model.minimum_grade
-    )
-
-
-async def get_course_links() -> List[str]:
+async def get_course_links() -> List[BaseDB]:
     async with httpx.AsyncClient() as client:
         response = await client.post(
             "https://ssb-prod.ec.usfca.edu/PROD/bwckschd.p_get_crse_unsec",
@@ -106,11 +86,56 @@ async def get_course_links() -> List[str]:
             data="term_in=202520&sel_subj=dummy&sel_day=dummy&sel_schd=dummy&sel_insm=dummy&sel_camp=dummy&sel_levl=dummy&sel_sess=dummy&sel_instr=dummy&sel_ptrm=dummy&sel_attr=dummy&sel_subj=%25&sel_crse=&sel_title=%25&sel_insm=%25&sel_camp=%25&sel_levl=%25&sel_instr=%25&sel_attr=%25&begin_hh=0&begin_mi=0&begin_ap=a&end_hh=0&end_mi=0&end_ap=a&begin_ap=x&end_ap=y"
         )
         soup = BeautifulSoup(response.text, 'html.parser')
+        global_table = soup.find('table', class_='datadisplaytable',
+                                 summary='This layout table is used to present the sections found')
 
-        links = soup.find_all('a', href=True)
-        links = list(filter(lambda x: x['href'].startswith(
-            '/PROD/bwckschd.p_disp_detail_sched'), links))
-        return links
+        table = list(filter(lambda x: x.name == 'tr', global_table.children))
+
+        paired_rows = [(table[i], table[i + 1])
+                       for i in range(0, len(table) - 1, 2)]
+        # print(paired_rows[0][0])
+
+        final_courses: List[BaseDB] = []
+        for course in paired_rows:
+            links = course[0].find_all('a', href=True)
+            link = list(filter(lambda x: x['href'].startswith(
+                '/PROD/bwckschd.p_disp_detail_sched'), links))[0]
+            link = link['href']
+            course_title_block: bs4.element.Tag = course[0]
+            course_title_a: bs4.element.Tag = course_title_block.find('a')
+            course_title = ' '.join(
+                course_title_a.text.replace('\n', '').split())
+            course_info_block: bs4.element.Tag = course[1]
+            schedule_table = course_info_block.find(
+                'table', class_='datadisplaytable')
+            times = schedule_table.find_all('tr')[1:]  # skip header
+            courses: List[USFCourseDB] = []
+            for time in times:
+                infos = list(map(lambda x: x.text, list(
+                    time.find_all("td"))))
+                course = USFCourseDB(
+                    course_type=infos[0],
+                    time=infos[1],
+                    days=infos[2],
+                    classroom=infos[3],
+                    date_range=infos[4],
+                    schedule_type=infos[5],
+                    instructor_name=infos[6],
+                    title=course_title,
+                    source_url=link
+                )
+                courses.append(course)
+            course_detect = await load_class(f"https://ssb-prod.ec.usfca.edu{link}")
+            data = course_detect.model_dump()
+            for course in courses:
+                # assign values according to data
+                for field in data.keys():
+                    if hasattr(course, field):
+                        setattr(course, field, data[field])
+            courses = await post_process(courses, [course.title for course in courses], [course.title for course in courses])
+            final_courses.extend(courses)
+        return final_courses
+
 prompt_template = ChatPromptTemplate.from_messages(
     [
         (
@@ -125,27 +150,25 @@ prompt_template = ChatPromptTemplate.from_messages(
 )
 
 
-async def load_class(link: str) -> BaseDB:
-    async with httpx.AsyncClient() as client:
-        response = await client.get(link)
-        soup = BeautifulSoup(response.text, 'html.parser')
+async def load_class(link: str) -> CourseModel:
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(link, timeout=15)
+            soup = BeautifulSoup(response.text, 'html.parser')
+    except Exception as e:
+        print(f'Error when fetch {link}: {e}')
     llm = ChatOpenAI(
         model="gpt-4o-mini", max_retries=5, timeout=30, api_key=settings.openai_api_key)
     structured_llm = llm.with_structured_output(schema=CourseModel)
 
     prompt: List[Dict[str, Any]] = await prompt_template.ainvoke({"text": soup.get_text()})
     data: CourseModel = await structured_llm.ainvoke(prompt)
-    data: USFCourseDB = map_course_model_to_db(data)
-    data = (await post_process([data], [data.course_code], [data.course_code]))[0]
-    data.source_url = link
     return data
 
 
 async def main() -> List[BaseDB]:
     links = await get_course_links()
-    tasks = [load_class(
-        f"https://ssb-prod.ec.usfca.edu{link['href']}") for link in links]
-    return await asyncio.gather(*tasks)
+    return links
 if __name__ == '__main__':
     print(asyncio.run(load_class(
         'https://ssb-prod.ec.usfca.edu/PROD/bwckschd.p_disp_detail_sched?term_in=202520&crn_in=21278')))

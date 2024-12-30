@@ -14,7 +14,7 @@ class Spider:
 
 spiders: List[Spider] = [
     Spider(school_name='ucr', func=ucr.main,
-           scheme=models.USCCourseDB, school_id=111),
+           scheme=models.USCCourseDB, school_id=1076),
     Spider(school_name='usf', func=usf.main,
-           scheme=models.USFCourseDB, school_id=222),
+           scheme=models.USFCourseDB, school_id=1600),
 ]

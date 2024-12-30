@@ -3,7 +3,6 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 from typing import Optional
-from settings import settings
 
 
 class Course(BaseModel):
@@ -79,7 +78,7 @@ async def extract(segs: List[str]) -> List[Dict[str, Any]]:
             new_segs.append(seg)
     segs = new_segs
     llm = ChatOpenAI(
-        model="gpt-4o", max_retries=5, timeout=30, api_key=settings.openai_api_key)
+        model="gpt-4o", max_retries=5, timeout=30)
     structured_llm = llm.with_structured_output(schema=Data)
 
     prompt: List[Dict[str, Any]] = await prompt_template.abatch([{"text": text} for text in segs])
@@ -100,4 +99,4 @@ async def extract(segs: List[str]) -> List[Dict[str, Any]]:
 if __name__ == "__main__":
     import asyncio
 
-    asyncio.run(extract([open('tmp.txt', 'r').read()]))
+    asyncio.run(extract(open('tmp.txt')))

@@ -73,7 +73,7 @@ async def main() -> List[BaseDB]:
         for courses in results:
             all_courses.extend(courses)
     progress.close()
-    all_courses: List[USCCourseDB] = list(
+    all_courses_db: List[USCCourseDB] = list(
         map(from_pydantic, all_courses))
     all_courses = await post_process(all_courses, [course.offering_title for course in all_courses], [
         course.offering_title for course in all_courses])
