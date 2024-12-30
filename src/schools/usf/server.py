@@ -52,10 +52,10 @@ class CourseModel(BaseModel):
         default=None, description="The remaining spots on the waitlist"
     )
     field_of_study: Optional[str] = Field(
-        default=None, description="The field of study of the course", max_length=100
+        default=None, description="The field of study of the course"
     )
     prerequisite_course: Optional[str] = Field(
-        default=None, description="The prerequisite course code", max_length=20
+        default=None, description="The prerequisite course code"
     )
     minimum_grade: Optional[str] = Field(
         default=None, description="The minimum grade required"
