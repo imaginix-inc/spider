@@ -83,3 +83,45 @@ class USFCourseDB(BaseDB):
         String(20), nullable=True, doc="The prerequisite course code")
     minimum_grade: Mapped[Optional[str]] = mapped_column(
         String(2), nullable=True, doc="The minimum grade required")
+
+
+class UCICourseDB(BaseDB):
+    __tablename__ = 'uci_courses'
+    
+    code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    section: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    units: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    modality: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    time: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    place: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    final: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    max_capacity: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    enrolled: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    waitlist: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    requests: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    restrictions: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    textbooks: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    web: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    payload: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+
+
+class UCSDCourseDB(BaseDB):
+    __tablename__ = 'ucsd_courses'
+    
+    course_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    course_title: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    units: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    restriction_codes: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    section_id: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    meeting_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    section: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    days: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    time: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    building: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    room: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    seats_available: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    seats_limit: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    payload: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+
