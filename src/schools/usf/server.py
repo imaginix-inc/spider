@@ -106,8 +106,11 @@ async def get_course_links() -> List[BaseDB]:
             course_title = ' '.join(
                 course_title_a.text.replace('\n', '').split())
             course_info_block: bs4.element.Tag = course[1]
+
             schedule_table = course_info_block.find(
                 'table', class_='datadisplaytable')
+            if schedule_table is None:
+                continue
             times = schedule_table.find_all('tr')[1:]  # skip header
             courses: List[USFCourseDB] = []
             for time in times:
@@ -125,15 +128,15 @@ async def get_course_links() -> List[BaseDB]:
                     source_url=link
                 )
                 courses.append(course)
-            course_detect = await load_class(f"https://ssb-prod.ec.usfca.edu{link}")
-            data = course_detect.model_dump()
-            for course in courses:
-                # assign values according to data
-                for field in data.keys():
-                    if hasattr(course, field):
-                        setattr(course, field, data[field])
-            courses = await post_process(courses, [course.title for course in courses], [course.title for course in courses])
-            final_courses.extend(courses)
+            # course_detect = await load_class(f"https://ssb-prod.ec.usfca.edu{link}")
+            # data = course_detect.model_dump()
+            # for course in courses:
+            #     # assign values according to data
+            #     for field in data.keys():
+            #         if hasattr(course, field):
+            #             setattr(course, field, data[field])
+            # courses = await post_process(courses, [course.title for course in courses], [course.title for course in courses])
+            # final_courses.extend(courses)
         return final_courses
 
 prompt_template = ChatPromptTemplate.from_messages(
@@ -170,5 +173,4 @@ async def main() -> List[BaseDB]:
     links = await get_course_links()
     return links
 if __name__ == '__main__':
-    print(asyncio.run(load_class(
-        'https://ssb-prod.ec.usfca.edu/PROD/bwckschd.p_disp_detail_sched?term_in=202520&crn_in=21278')))
+    asyncio.run(main())
