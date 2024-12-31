@@ -1,8 +1,41 @@
-import requests
-import psycopg2
-from datetime import datetime
-from utils import handle_tba, retrieve_list_from_pickle, save_list_to_pickle
+from .utils import handle_tba, retrieve_list_from_pickle, save_list_to_pickle
 from src.models import BaseDB, UCSCCourseDB
+import requests
+import aiohttp
+import asyncio
+from tqdm.asyncio import tqdm
+from typing import List
+from src.process import post_process
+
+class Course:
+    def __init__(self, id, subject, number, display_name, instruction_mode, academic_group, start_date, end_date,
+                 status, enrolled_count, max_enroll, waitlisted_count, max_waitlist, description, instructor_name,
+                 course_name, term, days, start_time, end_time, units):
+        self.id = id
+        self.subject = subject
+        self.number = number
+        self.display_name = display_name
+        self.instruction_mode = instruction_mode
+        self.academic_group = academic_group
+        self.start_date = start_date
+        self.end_date = end_date
+        self.status = status
+        self.enrolled_count = enrolled_count
+        self.max_enroll = max_enroll
+        self.waitlisted_count = waitlisted_count
+        self.max_waitlist = max_waitlist
+        self.description = description
+        self.instructor_name = instructor_name
+        self.course_name = course_name
+        self.term = term
+        self.days = days
+        self.start_time = start_time
+        self.end_time = end_time
+        self.units = units
+
+    def to_dict(self):
+        """Convert the course object to a dictionary."""
+        return self.__dict__
 
 
 course_number_file_path = "./cached_course_numbers_ucsc_2025_winter.pkl"
@@ -18,12 +51,22 @@ connection_string = "host=127.0.0.1 port=15432 dbname=defaultdb user=doadmin pas
 # Read the list from the file
 cached_course_numbers = retrieve_list_from_pickle(course_number_file_path)
 
+# Asynchronous wrapper for get_course_info
+async def get_course_info(course_number, semaphore=None):
+    if semaphore:
+        async with semaphore:
+            return await fetch_course(course_number)
+    else:
+        return await fetch_course(course_number)
 
-def get_course_info(course_number):
-    resp = requests.get(f"{base_url}/{course_number}")
-    if resp.status_code == 200:
-        data = resp.json()
-        return parse_course(data)
+
+# Helper function for fetching course data
+async def fetch_course(course_number):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{base_url}/{course_number}") as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return parse_course(data)
     return None
 
 
@@ -70,113 +113,47 @@ def parse_course(json_data):
         start_time=handle_tba(first_meeting.get("start_time"), "time") if first_meeting else None,
         end_time=handle_tba(first_meeting.get("end_time"), "time") if first_meeting else None,
         units=primary_section.get("credits"),
-        created_at=datetime.now(),
     )
 
     return course
 
+def map_course_to_db(course: Course) -> UCSCCourseDB:
+    return UCSCCourseDB(id=course.id, source_url=f"https://literature.ucsc.edu/courses/?d={course.subject}&t=2250",
+                        remark=course.description, instructor_name=course.instructor_name, subject=course.subject,
+                        number=course.number, display_name=course.display_name, instruction_mode=course.instruction_mode,
+                        academic_group=course.academic_group, start_date=course.start_date, end_date=course.end_date,
+                        status=course.status, enrolled_count=course.enrolled_count, max_enroll=course.max_enroll,
+                        waitlist_count=course.waitlisted_count, max_waitlist=course.max_waitlist, course_name=course.course_name,
+                        term=course.term, days=course.days, start_time=course.start_time, end_time=course.end_time, units=course.units)
 
-ucsc_data = []
 
-if cached_course_numbers:
-    for course_number in cached_course_numbers:
-        course = get_course_info(course_number)
+# Asynchronous main function with tqdm and optional semaphore
+async def main() -> List[BaseDB]:
+    ucsc_data = []
+    tasks = []
+    cached = not not cached_course_numbers
+    semaphore = asyncio.Semaphore(5)  # Limit concurrency to 5 requests
+
+    # Create tasks for cached or range of course numbers
+    course_numbers = cached_course_numbers if cached else range(30000, 34000)
+    for course_number in course_numbers:
+        tasks.append(get_course_info(course_number, semaphore))
+
+    new_cached_course_numbers = []
+
+    # Use tqdm for progress tracking
+    for result in tqdm(asyncio.as_completed(tasks), total=len(tasks), desc="Fetching courses for UCSC"):
+        course = await result
         if course:
-            print(course.to_dict())
             ucsc_data.append(course)
-else:
-    for course_number in range(30000, 40000):
-        course = get_course_info(course_number)
-        if course:
-            print(course.to_dict())
-            cached_course_numbers.append(course_number)
-            ucsc_data.append(course)
-        else:
-            print(course_number)
+            if not cached:
+                new_cached_course_numbers.append(course.id)
 
-    save_list_to_pickle(course_number_file_path, cached_course_numbers)
+    all_course_data = []
+    for course in ucsc_data:
+        all_course_data.append(map_course_to_db(course))
+    all_course_data = await post_process(all_course_data, [course.course_name for course in all_course_data], [course.course_name for course in all_course_data])
 
-
-# Establish the connection
-conn = psycopg2.connect(connection_string)
-cursor = conn.cursor()
-print("Connected to the database successfully.")
-
-drop_table_query = f"DROP TABLE IF EXISTS {table_name};"
-
-create_table_query = f"""
-CREATE TABLE {table_name} (
-    id TEXT PRIMARY KEY,
-    subject TEXT,
-    number TEXT,
-    source_url TEXT,
-    display_name TEXT,
-    instruction_mode TEXT,
-    academic_group TEXT,
-    start_date DATE,
-    end_date DATE,
-    status TEXT,
-    enrolled_count INTEGER,
-    max_enroll INTEGER,
-    waitlisted_count INTEGER,
-    max_waitlist INTEGER,
-    description TEXT,
-    instructor_name TEXT,
-    course_name TEXT,
-    term TEXT,
-    days TEXT,
-    start_time TIME,
-    end_time TIME,
-    units INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    tenant_id INTEGER,
-    name_vector VECTOR DEFAULT NULL,
-    search_vector TSVECTOR DEFAULT NULL
-);
-"""
-
-# Execute the queries
-try:
-    cursor.execute(drop_table_query)
-    cursor.execute(create_table_query)
-    conn.commit()
-    print(f"Table '{table_name}' created successfully.")
-except Exception as e:
-    conn.rollback()
-    print(f"Error creating table: {e}")
-
-# Define the insert query
-insert_query = f"""
-INSERT INTO {table_name} (
-    id, subject, number, source_url, display_name, instruction_mode, academic_group, start_date, end_date,
-    status, enrolled_count, max_enroll, waitlisted_count, max_waitlist, description,
-    instructor_name, course_name, term, days, start_time, end_time, units, created_at, tenant_id
-) VALUES (
-    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0
-);
-"""
-
-
-# Function to insert course data into the database
-def insert_course_to_db(course):
-    source_url = f"https://literature.ucsc.edu/courses/?d={course.subject}&t=2250"
-    try:
-        cursor.execute(insert_query, (
-            course.id, course.subject, course.number, source_url, course.display_name, course.instruction_mode, course.academic_group,
-            course.start_date, course.end_date, course.status, course.enrolled_count, course.max_enroll,
-            course.waitlisted_count, course.max_waitlist, course.description, course.instructor_name,
-            course.course_name, course.term, course.days, course.start_time, course.end_time, course.units, course.created_at
-        ))
-        conn.commit()
-        print(f"Inserted course with ID: {course.id}")
-    except Exception as e:
-        conn.rollback()
-        print(f"Error inserting course with ID {course.id}: {e}")
-
-
-# Example usage
-for course in ucsc_data:
-    insert_course_to_db(course)
-
-
-
+    if not cached:
+        save_list_to_pickle(course_number_file_path, new_cached_course_numbers)
+    return all_course_data
