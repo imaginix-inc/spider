@@ -1,9 +1,9 @@
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
-from sqlalchemy import Integer, String, DateTime, func, SmallInteger, BigInteger, Float
+from sqlalchemy import Integer, String, DateTime, func, SmallInteger, BigInteger, Float, Text, ARRAY
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.ext.declarative import DeferredReflection
-from typing import Optional
+from typing import Optional, List
 
 
 class BaseDB(DeclarativeBase):
@@ -90,38 +90,37 @@ class UCICourseDB(BaseDB):
     
     code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    section: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
-    units: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
-    modality: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    time: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    place: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    final: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    section: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    units: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    modality: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    time: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    place: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    final: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     max_capacity: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     enrolled: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     waitlist: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     requests: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    restrictions: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    textbooks: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    web: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    payload: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    restrictions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    textbooks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    web: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    payload: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
 class UCSDCourseDB(BaseDB):
     __tablename__ = 'ucsd_courses'
     
-    course_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    course_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     course_title: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    units: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    restriction_codes: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    section_id: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    meeting_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    section: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
-    days: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    units: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    restriction_codes: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), nullable=True)
+    section_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    meeting_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    section: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    days: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     time: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     building: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     room: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    seats_available: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    seats_limit: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    payload: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    seats_available: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    seats_limit: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 

@@ -7,6 +7,9 @@ from src.models import UCSDCourseDB
 from typing import List
 import asyncio
 from src.models import BaseDB
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 url = "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudentResult.htm"
 
@@ -72,8 +75,7 @@ def extract_page_content(page_source) -> List[UCSDCourseDB]:
                         instructor_name=instructor_name,
                         seats_available=seats_available,
                         seats_limit=seats_limit,
-                        source_url=source_url,
-                        payload=None
+                        source_url=source_url
                     )
                     courses.append(course)  # 添加到列表中
 
@@ -108,8 +110,7 @@ def extract_page_content(page_source) -> List[UCSDCourseDB]:
                         instructor_name=instructor_name,
                         seats_available=seats_available,
                         seats_limit=seats_limit,
-                        source_url=source_url,
-                        payload=None
+                        source_url=source_url
                     )
                     courses.append(course)  # 添加到列表中
 
@@ -139,10 +140,10 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
     driver = webdriver.Chrome(options=chrome_options)
     try:
         driver.get(url)
-        time.sleep(1)
-
-        # Get list of departments first
-        select_element = driver.find_element(By.ID, "selectedSubjects")
+        # 等待科目选择下拉框出现
+        select_element = WebDriverWait(driver, 2).until(
+            EC.presence_of_element_located((By.ID, "selectedSubjects"))
+        )
         select = Select(select_element)
         departments = [option.get_attribute('value') for option in select.options if option.get_attribute('value')]
     finally:
@@ -153,36 +154,69 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
         dept_start_time = time.time()
         print(f"Processing department: {department}")
 
-        driver = webdriver.Chrome(options=chrome_options)  # 使用相同的无头模式选项
+        driver = webdriver.Chrome(options=chrome_options)
         try:
             driver.get(url)
-            time.sleep(1)
-
-            select_element = driver.find_element(By.ID, "selectedSubjects")
+            
+            # 等待并选择科目
+            select_element = WebDriverWait(driver, 2).until(
+                EC.presence_of_element_located((By.ID, "selectedSubjects"))
+            )
             select = Select(select_element)
             select.select_by_value(department)
 
-            search_button = driver.find_element(By.ID, "socFacSubmit")
+            # 等待并点击搜索按钮
+            search_button = WebDriverWait(driver, 2).until(
+                EC.element_to_be_clickable((By.ID, "socFacSubmit"))
+            )
             search_button.click()
 
-            # Process all pages for this department
-            page_number = 1
-            while True:
-                time.sleep(1)
-                page_content = driver.page_source
-                page_courses = extract_page_content(page_content)
-                all_courses.extend(page_courses)  # 将当前页面的课程添加到总列表中
-                print(f"Page {page_number}: {len(page_courses)} courses processed")
+            try:
+                # 首先检查是否有结果
+                WebDriverWait(driver, 2).until(
+                    lambda x: len(x.find_elements(By.CLASS_NAME, "tbrdr")) > 0 or 
+                            "No classes were found that meet your search criteria" in x.page_source
+                )
+                
+                # 如果页面包含"没有找到课程"的消息，跳过这个部门
+                if "No classes were found that meet your search criteria" in driver.page_source:
+                    print(f"No courses found for department {department}")
+                    continue
 
-                try:
-                    pagination_td = driver.find_element(By.CSS_SELECTOR, "td[align='right']")
-                    current_page = int(pagination_td.text.strip().split()[1].strip('()'))
-                    next_page_link = driver.find_element(By.CSS_SELECTOR, f"a[href*='page={current_page + 1}']")
-                    next_page_link.click()
-                    page_number += 1
-                except:
-                    print(f"Reached last page for department {department}")
-                    break
+                page_number = 1
+                while True:
+                    # 等待页面加载完成（等待某个必定会出现的元素）
+                    WebDriverWait(driver, 2).until(
+                        EC.presence_of_element_located((By.CLASS_NAME, "tbrdr"))
+                    )
+                    
+                    page_content = driver.page_source
+                    page_courses = extract_page_content(page_content)
+                    all_courses.extend(page_courses)  # 将当前页面的课程添加到总列表中
+                    print(f"Page {page_number}: {len(page_courses)} courses processed")
+
+                    try:
+                        # 等待并检查分页信息
+                        pagination_td = WebDriverWait(driver, 2).until(
+                            EC.presence_of_element_located((By.CSS_SELECTOR, "td[align='right']"))
+                        )
+                        current_page = int(pagination_td.text.strip().split()[1].strip('()'))
+                        next_page_link = WebDriverWait(driver, 2).until(
+                            EC.element_to_be_clickable((By.CSS_SELECTOR, f"a[href*='page={current_page + 1}']"))
+                        )
+                        next_page_link.click()
+                        page_number += 1
+                    except TimeoutException:
+                        print(f"Reached last page for department {department}")
+                        break
+
+            except TimeoutException:
+                print(f"Timeout or no results for department {department}")
+                continue
+
+        except Exception as e:
+            print(f"Error processing department {department}: {str(e)}")
+            continue
         finally:
             driver.quit()
 
