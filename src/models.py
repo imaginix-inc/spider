@@ -127,22 +127,26 @@ class UCSDCourseDB(BaseDB):
     
 class UCSCCourseDB(BaseDB):
     __tablename__ = 'ucsc_courses'
-    subject = mapped_column(String)
-    number = mapped_column(String)
-    display_name = mapped_column(String)
-    instruction_mode = mapped_column(String)
-    academic_group = mapped_column(String)
-    start_date = mapped_column(String)
-    end_date = mapped_column(String)
-    status = mapped_column(String)
-    enrolled_count = mapped_column(Integer)
-    max_enroll = mapped_column(Integer)
-    waitlist_count = mapped_column(Integer)
-    max_waitlist = mapped_column(Integer)
-    course_name = mapped_column(String)
-    term = mapped_column(String)
-    days = mapped_column(String)
-    start_time = mapped_column(String)
-    end_time = mapped_column(String)
-    units = mapped_column(Integer)
+    subject: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    display_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    instruction_mode: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    academic_group: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    start_date: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    end_date: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    enrolled_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    max_enroll: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    waitlist_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    max_waitlist: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    course_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    term: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    days: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    start_time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    end_time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    units: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+class UCRCourseDB(BaseDB):
+    __tablename__ = "ucr_courses"
+
 
