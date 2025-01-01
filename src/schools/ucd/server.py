@@ -284,7 +284,7 @@ async def main() :
     Main function to extract all courses with concurrent processing.
     """
     all_courses = []
-    semaphore = asyncio.Semaphore(5)  # Limit concurrent requests
+    semaphore = asyncio.Semaphore(1)  # Limit concurrent requests
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         tasks = []
@@ -295,7 +295,7 @@ async def main() :
         for courses in results:
             all_courses.extend(courses)
 
-    print(all_courses)
+    print(f"Found {len(all_courses)} courses for UC Davis")
 
     # Convert to database models and post-process
     # db_courses = [UCDCourseDB(**course.dict()) for course in all_courses]
