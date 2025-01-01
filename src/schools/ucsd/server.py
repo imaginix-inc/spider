@@ -130,8 +130,13 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
     start_time = time.time()
     all_courses = []  # 存储所有课程
 
-    # Create initial driver just to get the department list
-    driver = webdriver.Chrome()
+    # 创建 Chrome 选项并启用无头模式
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument('--headless')  # 启用无头模式
+    chrome_options.add_argument('--disable-gpu')  # 某些系统需要此参数
+    
+    # 使用配置好的选项创建初始 driver
+    driver = webdriver.Chrome(options=chrome_options)
     try:
         driver.get(url)
         time.sleep(1)
@@ -148,7 +153,7 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
         dept_start_time = time.time()
         print(f"Processing department: {department}")
 
-        driver = webdriver.Chrome()
+        driver = webdriver.Chrome(options=chrome_options)  # 使用相同的无头模式选项
         try:
             driver.get(url)
             time.sleep(1)
