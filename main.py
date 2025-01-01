@@ -1,11 +1,18 @@
 from src import execute
 import asyncio
-from asyncz.schedulers.asyncio import AsyncIOScheduler
+from async_cron.job import CronJob
+from async_cron.schedule import Scheduler
 
 
 async def main():
-    async with AsyncIOScheduler() as scheduler:
-        pass
+    # Execute the task first
+    await execute.execute()
 
-if __name__ == '__main__':
-    asyncio.run(main())
+    # Start the scheduler
+    msh = Scheduler(locale="en_US")
+    task = CronJob(name='spider').at('00:00').every(1).day.go(execute.execute)
+    msh.add_job(task)
+    await msh.start()
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
