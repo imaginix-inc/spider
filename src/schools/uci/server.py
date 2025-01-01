@@ -42,7 +42,6 @@ async def get_courses_by_department(department: str, YearTerm="2025-03") -> List
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(url, data=payload)
-            print(f"Response status: {response.status_code}")
             
             soup = BeautifulSoup(response.text, 'html.parser')
             
@@ -78,9 +77,10 @@ async def get_courses_by_department(department: str, YearTerm="2025-03") -> List
                             payload=str(payload)
                         )
                         courses.append(course)
-            print(f"Found {len(courses)} courses for department {department}")
-            if courses:  # Only try to print if we have courses
-                print(f"Sample course details: {courses[0].__dict__}")
+            if __name__ == "__main__":
+                print(f"Found {len(courses)} courses for department {department}")
+                if courses:  # Only try to print if we have courses
+                    print(f"Sample course details: {courses[0].__dict__}")
             return courses
             
         except Exception as e:
@@ -91,6 +91,7 @@ async def get_courses_by_department(department: str, YearTerm="2025-03") -> List
 
 async def get_all_courses() -> List[UCICourseDB]:
     """Get all courses for all departments and terms."""
+    print(f"Getting courses for UCI")
     all_courses = []
     for department in departments:
         courses = await get_courses_by_department(department)
