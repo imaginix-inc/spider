@@ -5,23 +5,20 @@ import time
 from bs4 import BeautifulSoup
 from src.models import UCSDCourseDB
 from typing import List
-import asyncio
-from src.models import BaseDB
+
 
 url = "https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudentResult.htm"
-
-
 def extract_page_content(page_source) -> List[UCSDCourseDB]:
     soup = BeautifulSoup(page_source, 'html.parser')
     tables = soup.find_all('table', class_='tbrdr')
     courses = []  # 改为存储课程列表
-
+    
     # Initialize course header variables with default values
     current_course_number = None
     current_course_title = None
     current_units = None
     current_restriction_codes = []
-
+    
     for table in tables:
         items = table.find_all('tr')
         for item in items:
@@ -116,10 +113,9 @@ def extract_page_content(page_source) -> List[UCSDCourseDB]:
             except Exception as e:
                 print(f"Warning: Error processing row: {str(e)}")
                 continue
-
+    
     print(f"Extracted {len(courses)} courses from current page")
     return courses  # 返回课程列表
-
 
 def scrape_department_courses() -> List[UCSDCourseDB]:
     """
@@ -130,17 +126,12 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
     start_time = time.time()
     all_courses = []  # 存储所有课程
 
-    # 创建 Chrome 选项并启用无头模式
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument('--headless')  # 启用无头模式
-    chrome_options.add_argument('--disable-gpu')  # 某些系统需要此参数
-    
-    # 使用配置好的选项创建初始 driver
-    driver = webdriver.Chrome(options=chrome_options)
+    # Create initial driver just to get the department list
+    driver = webdriver.Chrome()
     try:
         driver.get(url)
-        time.sleep(1)
-
+        time.sleep(3)
+        
         # Get list of departments first
         select_element = driver.find_element(By.ID, "selectedSubjects")
         select = Select(select_element)
@@ -149,15 +140,15 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
         driver.quit()
 
     # Process each department with a fresh driver
-    for department in departments:
+    for department in departments: 
         dept_start_time = time.time()
         print(f"Processing department: {department}")
-
-        driver = webdriver.Chrome(options=chrome_options)  # 使用相同的无头模式选项
+        
+        driver = webdriver.Chrome()
         try:
             driver.get(url)
-            time.sleep(1)
-
+            time.sleep(2)
+            
             select_element = driver.find_element(By.ID, "selectedSubjects")
             select = Select(select_element)
             select.select_by_value(department)
@@ -168,12 +159,12 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
             # Process all pages for this department
             page_number = 1
             while True:
-                time.sleep(1)
+                time.sleep(2)
                 page_content = driver.page_source
                 page_courses = extract_page_content(page_content)
                 all_courses.extend(page_courses)  # 将当前页面的课程添加到总列表中
                 print(f"Page {page_number}: {len(page_courses)} courses processed")
-
+                
                 try:
                     pagination_td = driver.find_element(By.CSS_SELECTOR, "td[align='right']")
                     current_page = int(pagination_td.text.strip().split()[1].strip('()'))
@@ -195,21 +186,12 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
     total_duration = time.time() - start_time
     print(f"Total courses scraped: {len(all_courses)}")
     print(f"Total scraping time: {total_duration:.2f} seconds")
-    print(f"Average time per course: {total_duration / len(all_courses):.2f} seconds")
-
+    print(f"Average time per course: {total_duration/len(all_courses):.2f} seconds")
+    
     return all_courses
 
-async def main() -> List[BaseDB]:
-    """Main entry point for UCSD course scraping."""
-    start_time = time.time()
-    courses = scrape_department_courses()
-    
-    # total_duration = time.time() - start_time
-    # print(f"Total courses scraped: {len(courses)}")
-    # print(f"Total scraping time: {total_duration:.2f} seconds")
-    # print(f"Average time per course: {total_duration/len(courses):.2f} seconds")
-    
-    return courses
-
+# 使用示例：
 if __name__ == "__main__":
-    asyncio.run(main())
+    # 爬取所有系的课程
+    courses = scrape_department_courses()
+    print(f"Successfully scraped {len(courses)} courses")

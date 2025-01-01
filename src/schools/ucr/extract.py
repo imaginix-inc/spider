@@ -102,4 +102,4 @@ async def extract(segs: List[str], url: str) -> List[Course]:
 if __name__ == "__main__":
     import asyncio
 
-    asyncio.run(extract([open('tmp.txt', 'r').read()]))
+    asyncio.run(extract([open('tmp.txt', 'r').read()], 'test'))
