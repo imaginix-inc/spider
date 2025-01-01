@@ -2,6 +2,8 @@ import sys
 from pathlib import Path
 from urllib.parse import urlencode
 import json
+import time
+import re
 
 # Add project root to Python path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -187,36 +189,158 @@ departments = [
 ]
 
 
-async def get_courses_list(department, YearTerm="25W") -> List[UCSDCourseDB]:
-    """Get all courses for a given department and term."""
-    base_url = "https://sa.ucla.edu/ro/public/soc/Results/GetCourseTitlesPage"
-    
-    # Create the model and filterFlags dictionaries
-    model = {"term_cd":"25W","ses_grp_cd":"%","class_no":None,"crs_catlg_no":None,"subj_area_cd":"AERO ST","subj_area_name":"Aerospace Studies (AERO ST)","class_prim_act_fl":"y"}
-    
-    filter_flags = {"enrollment_status":"O,W,C,X,T,S","advanced":"y","meet_days":"F","start_time":"8:00 am","end_time":"3:00 pm","meet_locations":None,"meet_units":None,"instructor":None,"class_career":None,"impacted":"N","enrollment_restrictions":None,"enforced_requisites":None,"individual_studies":"n","summer_session":None}
+import json
+from typing import List
+from urllib.parse import urlencode
+import httpx
 
-    # Convert dictionaries to JSON strings with double quotes
-    model_json = json.dumps(model, separators=(',', ':'))  # Remove spaces
-    filter_flags_json = json.dumps(filter_flags, separators=(',', ':'))  # Remove spaces
-
-    # Create params dictionary with raw JSON strings
-    params = {
-        "search_by": "subject",
-        "model": model,
-        "filterFlags": filter_flags,
-        "isFilter": "false",
-        "_": "1735626498227"
+async def get_course_summary(course_data: dict, YearTerm="25W") -> dict:
+    """Get detailed course summary for a specific course."""
+    base_url = "https://sa.ucla.edu/ro/public/soc/Results/GetCourseSummary"
+    
+    # Construct model from course data
+    model = {
+        "Term": YearTerm,
+        "SubjectAreaCode": course_data["SubjectAreaCode"],
+        "CatalogNumber": course_data["CatalogNumber"],
+        "IsRoot": course_data["IsRoot"],
+        "SessionGroup": course_data["SessionGroup"],
+        "ClassNumber": course_data["ClassNumber"],
+        "SequenceNumber": course_data["SequenceNumber"],
+        "Path": course_data["Path"],
+        "MultiListedClassFlag": course_data["MultiListedClassFlag"],
+        "Token": course_data["Token"]
     }
 
-    # Create full URL with encoded parameters
-    full_url = f"{base_url}?{urlencode(params)}"
-    print(f"Generated URL: {full_url}")
+    # Construct filter flags - simplified to essential parameters
+    filter_flags = {
+        "enrollment_status": "O,W,C,X,T,S",
+        "advanced": "y",
+        "individual_studies": "n"
+    }
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(full_url)
+    # Create query parameters
+    query_params = {
+        "model": json.dumps(model),
+        "filterFlags": json.dumps(filter_flags)
+    }
+
+    # Make the request with proper headers
+    async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Accept-Language": "en-US,en;q=0.9",
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": "https://sa.ucla.edu/ro/public/soc"
+        }
+
+        try:
+            response = await client.get(
+                base_url, 
+                params=query_params,
+                headers=headers
+            )
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"Error getting course summary: {response.status_code}")
+                return None
+        except Exception as e:
+            print(f"Exception getting course summary: {e}")
+            return None
+
+async def extract_course_data(response_json: dict) -> List[dict]:
+    """Extract course data from the ClassPartialViewData HTML content."""
+    courses = []
     
-    return []
+    # Get HTML content from ClassPartialViewData
+    html_content = response_json.get("ClassPartialViewData", "")
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Find all script tags containing course data
+    scripts = soup.find_all('script')
+    for script in scripts:
+        if script.string and 'AddToCourseData' in script.string:
+            # Extract the JSON data using regex
+            match = re.search(r'AddToCourseData\("([^"]+)",(\{[^}]+\})', script.string)
+            if match:
+                try:
+                    course_id = match.group(1)
+                    course_data = json.loads(match.group(2))
+                    courses.append(course_data)
+                except json.JSONDecodeError:
+                    continue
+    return courses
+
+# Update get_courses_list to use the new methods
+async def get_courses_list(department: str, YearTerm="25W") -> List[dict]:
+    """Get all courses for a given department and term."""
+    base_url = "https://sa.ucla.edu/ro/public/soc/Results/GetCourseTitlesPage"
+
+    # Update model with correct department info
+    model = {
+        "term_cd": YearTerm,
+        "subj_area_cd": department["value"],
+        "subj_area_name": department["text"],
+        "ses_grp_cd": "%",
+        "class_no": None,
+        "crs_catlg_no": None,
+        "class_career": None,
+        "class_prim_act_fl": "y",
+    }
+
+    # Simplify filterFlags to essential parameters
+    filter_flags = {
+        "enrollment_status": "O,W,C,X,T,S",
+        "advanced": "y",
+        "individual_studies": "n",
+    }
+
+    # Create params dictionary
+    params = {
+        "search_by": "subject",
+        "model": json.dumps(model, separators=(',', ':'), ensure_ascii=False),
+        "filterFlags": json.dumps(filter_flags, separators=(',', ':'), ensure_ascii=False),
+        "isFilter": "false",
+    }
+
+    # Perform HTTP request with proper headers
+    async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Accept-Language": "en-US,en;q=0.9",
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": "https://sa.ucla.edu/ro/public/soc",
+            "Connection": "keep-alive",
+        }
+        
+        try:
+            response = await client.get(base_url, params=params, headers=headers)
+            print(f"Status Code: {response.status_code}")
+            print(f"Response Headers: {response.headers}")
+            print(f"Response Content: {response.text[:200]}...")  # Print first 200 chars
+            
+            if response.status_code == 200:
+                response_json = response.json()
+                courses = await extract_course_data(response_json)
+                
+                # Get detailed summary for each course
+                detailed_courses = []
+                for course in courses:
+                    summary = await get_course_summary(course, YearTerm)
+                    if summary:
+                        detailed_courses.append(summary)
+                
+                return detailed_courses
+            else:
+                print(f"Error Status: {response.status_code}")
+                return []
+                
+        except Exception as e:
+            print(f"Request Error: {e}")
+            return []
 
 async def get_all_courses() -> List:
     """Get all courses for all departments."""
