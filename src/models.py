@@ -123,4 +123,27 @@ class UCSDCourseDB(BaseDB):
     room: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     seats_available: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     seats_limit: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    
+    
+class UCSCCourseDB(BaseDB):
+    __tablename__ = 'ucsc_courses'
+    subject: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    display_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    instruction_mode: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    academic_group: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    start_date: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    end_date: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    enrolled_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    max_enroll: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    waitlist_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    max_waitlist: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    course_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    term: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    days: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    start_time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    end_time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    units: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
 
