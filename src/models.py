@@ -146,4 +146,14 @@ class UCSCCourseDB(BaseDB):
     end_time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     units: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
+class UCLACourseDB(BaseDB):
+    __tablename__ = 'ucla_courses'
+    section: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    waitlist: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    days: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    units: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
 
