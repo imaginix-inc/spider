@@ -155,5 +155,14 @@ class UCLACourseDB(BaseDB):
     time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     location: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     units: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    term: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    subject_area_code: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    catalog_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    class_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    sequence_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    path: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+
 
 

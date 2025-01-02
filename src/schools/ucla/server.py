@@ -308,7 +308,16 @@ async def get_course_summary(course_data: dict, YearTerm="25W") -> List[UCLACour
             )
             if response.status_code == 200:
                 data = response.text
-                return get_course_details(data)
+                courses = get_course_details(data)
+                for course in courses:
+                    course.term = model["Term"]
+                    course.subject_area_code = model["SubjectAreaCode"]
+                    course.catalog_number = model["CatalogNumber"]
+                    course.class_number = model["ClassNumber"]
+                    course.sequence_number = model["SequenceNumber"]
+                    course.path = model["Path"]
+                    course.token = model["Token"]
+                return courses
             else:
                 print(f"HTTP Error {response.status_code}: {response.text}")
                 return []
@@ -409,6 +418,7 @@ async def get_courses_list(department: str, YearTerm="25W") -> List[UCLACourseDB
 async def get_all_courses() -> List[UCLACourseDB]:
     """Get all courses for all departments."""
     all_courses = []
+    # all_courses.extend(await get_courses_list(departments[0]))
     for department in departments:
         all_courses.extend(await get_courses_list(department))
     return all_courses
