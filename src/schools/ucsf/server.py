@@ -2,6 +2,8 @@ from bs4 import BeautifulSoup
 import requests
 from src.models import UCSFCourseDB, BaseDB
 from typing import List
+from tqdm import tqdm
+from src.process import post_process
 
 base_url = "https://catalog.ucsf.edu/course-catalog"
 subjects = {
@@ -48,7 +50,7 @@ subjects = {
     "neurosci": "Neurosciences",
     "nursing": "Nursing",
     "skills_lab": "Nursing Skills Lab",
-    "nursadvpr": "Nursing, Advanced Practice",
+    "nurs_adv_pr": "Nursing, Advanced Practice",
     "nutrition": "Nutrition",
     "ob_gyn_r_s": "Obstetrics, Gynecology, and Reproductive Science",
     "ophthalmol": "Ophthalmology",
@@ -84,7 +86,12 @@ subjects = {
 
 
 def fetch_course_info(url, subject):
-    resp = requests.get(url).text
+    try:
+        resp = requests.get(url).text
+    except Exception as ex:
+        print(ex)
+        return
+
     soup = BeautifulSoup(resp, 'html.parser')
 
     # Find all courseblock elements
@@ -104,12 +111,20 @@ def fetch_course_info(url, subject):
 
         course_term = block.find('span', class_="detail-offering").get_text(strip=True)
 
-        course_instructor = block.select('div > p > span.skip-makebubbles > span > a')[0].get_text(strip=True)
+        instructor_blocks = block.select('div > p > span.skip-makebubbles > span > a')
+        if instructor_blocks:
+            course_instructor = block.select('div > p > span.skip-makebubbles > span > a')[0].get_text(strip=True)
+        else:
+            course_instructor = None
 
         activity_tag = block.find('p', class_="detail-activities")
-        course_activities = ''.join(str(item).strip() for item in activity_tag.contents if not hasattr(item, 'contents')).strip()
+        if activity_tag:
+            course_activities = ''.join(str(item).strip() for item in activity_tag.contents if not hasattr(item, 'contents')).strip()
+            course_description = activity_tag.find_parent('div').next_sibling.find('p').get_text(strip=True)
+        else:
+            course_activities = None
+            course_description = None
 
-        course_description = activity_tag.find_parent('div').next_sibling.find('p').get_text(strip=True)
 
         course = UCSFCourseDB(remark=course_description, term=course_term, units=course_unit,
                               activity=course_activities, prefix=course_prefix, number=course_number,
@@ -126,6 +141,9 @@ async def main() -> List[BaseDB]:
     courses_db = []
     for key in tqdm(subjects, desc="Fetching courses for UCSF"):
         l = fetch_course_info(f"{base_url}/{key}", subjects[key])
+        if not l:
+            print(f"subject {subjects[key]} not found")
+            continue
         for db, title in l:
             course_titles.append(title)
             courses_db.append(db)

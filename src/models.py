@@ -135,16 +135,16 @@ class UCSCCourseDB(BaseDB):
     start_date: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     end_date: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    enrolled_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    max_enroll: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    waitlist_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    max_waitlist: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    enrolled_count: Mapped[Optional[int]] = mapped_column(String, nullable=True)
+    max_enroll: Mapped[Optional[int]] = mapped_column(String, nullable=True)
+    waitlist_count: Mapped[Optional[int]] = mapped_column(String, nullable=True)
+    max_waitlist: Mapped[Optional[int]] = mapped_column(String, nullable=True)
     course_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     term: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     days: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     start_time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     end_time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    units: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    units: Mapped[Optional[int]] = mapped_column(String, nullable=True)
 
 class UCLACourseDB(BaseDB):
     __tablename__ = 'ucla_courses'
@@ -174,3 +174,4 @@ class UCSFCourseDB(BaseDB):
     course_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     units: Mapped[Optional[int]] = mapped_column(String, nullable=True)
     activity: Mapped[Optional[int]] = mapped_column(String, nullable=True)
+    term: Mapped[Optional[int]] = mapped_column(String, nullable=True)
