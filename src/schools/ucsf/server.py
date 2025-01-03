@@ -1,12 +1,85 @@
 from bs4 import BeautifulSoup
 import requests
-from src.models import UCSFCourseDB
-
+from src.models import UCSFCourseDB, BaseDB
+from typing import List
 
 base_url = "https://catalog.ucsf.edu/course-catalog"
 subjects = {
-    "aicompdrug": "Artificial Intelligence and Computational Drug Discovery and Development",
     "anatomy": "Anatomy",
+    "ane_periop": "Anesthesia and Perioperative Care",
+    "anthropol": "Anthropology",
+    "aicompdrug": "Artificial Intelligence and Computational Drug Discovery and Development",
+    "biochem": "Biochemistry",
+    "bioengr": "Bioengineering",
+    "biomed_img": "Biomedical Imaging",
+    "bio_md_inf": "Biomedical Informatics",
+    "biomed_sci": "Biomedical Sciences",
+    "biophrm_sc": "Biopharmaceutical Sciences",
+    "biophysics": "Biophysics",
+    "biostat": "Biostatistics",
+    "cell_biol": "Cell Biology",
+    "chemistry": "Chemistry",
+    "cl_pharm": "Clinical Pharmacy",
+    "comp_hlth": "Computational Precision Health",
+    "cran_anom": "Craniofacial Anomalies",
+    "datasci": "Data Science",
+    "den_pub_hl": "Dental Public Health",
+    "dentalsci": "Dental Sciences",
+    "dermatol": "Dermatology",
+    "dev_stmcel": "Developmental and Stem Cell Biology",
+    "emerg_med": "Emergency Medicine",
+    "endicrinol": "Endocrinology",
+    "epidemiol": "Epidemiology",
+    "eqbraihlth": "Equity in Brain Health",
+    "fam_cm_med": "Family and Community Medicine",
+    "gencounsel": "Genetic Counseling",
+    "genetics": "Genetics",
+    "globl_hlth": "Global Health Sciences",
+    "grad": "Graduate Studies",
+    "hlth_admin": "Healthcare Administration",
+    "hist_hl_sc": "History of Health Sciences",
+    "implmt_sci": "Implementation Science",
+    "interdept": "Interdepartmental Studies",
+    "lab_med": "Laboratory Medicine",
+    "medicine": "Medicine",
+    "microbiol": "Microbiology",
+    "neuro_surg": "Neurological Surgery",
+    "neurology": "Neurology",
+    "neurosci": "Neurosciences",
+    "nursing": "Nursing",
+    "skills_lab": "Nursing Skills Lab",
+    "nursadvpr": "Nursing, Advanced Practice",
+    "nutrition": "Nutrition",
+    "ob_gyn_r_s": "Obstetrics, Gynecology, and Reproductive Science",
+    "ophthalmol": "Ophthalmology",
+    "or_cra_fac": "Oral and Craniofacial Sciences",
+    "or_mx_surg": "Oral and Maxillofacial Surgery",
+    "oral_med": "Oral Medicine",
+    "oral_rad": "Oral Radiology",
+    "orthodont": "Orthodontics",
+    "ortho_surg": "Orthopaedic Surgery",
+    "otolaryn": "Otolaryngology",
+    "pathology": "Pathology",
+    "pt_cn_care": "Patient-Centered Care",
+    "ped_dent": "Pediatric Dentistry",
+    "pediatrics": "Pediatrics",
+    "periodont": "Periodontics",
+    "pharm_chem": "Pharmaceutical Chemistry",
+    "pharmgenom": "Pharmacogenomics",
+    "pharmacol": "Pharmacology",
+    "pharmis": "Pharmacy Integrated Sciences",
+    "phys_ther": "Physical Therapy",
+    "prv_rs_den": "Preventive and Restorative Dental Sciences",
+    "psychiatry": "Psychiatry",
+    "psychology": "Psychology",
+    "rad_oncol": "Radiation Oncology",
+    "radiology": "Radiology",
+    "rehab_sci": "Rehabilitation Science",
+    "restor_den": "Restorative Dentistry",
+    "scimethods": "Scientific Methods",
+    "sociology": "Sociology",
+    "surgery": "Surgery",
+    "urology": "Urology"
 }
 
 
@@ -51,7 +124,7 @@ def fetch_course_info(url, subject):
 async def main() -> List[BaseDB]:
     course_titles = []
     courses_db = []
-    for key in subjects:
+    for key in tqdm(subjects, desc="Fetching courses for UCSF"):
         l = fetch_course_info(f"{base_url}/{key}", subjects[key])
         for db, title in l:
             course_titles.append(title)

@@ -149,11 +149,12 @@ async def main() -> List[BaseDB]:
             if not cached:
                 new_cached_course_numbers.append(course.id)
 
+    if not cached:
+        save_list_to_pickle(course_number_file_path, new_cached_course_numbers)
+
     all_course_data = []
     for course in ucsc_data:
         all_course_data.append(map_course_to_db(course))
     all_course_data = await post_process(all_course_data, [course.course_name for course in ucsc_data], [course.course_name for course in ucsc_data])
 
-    if not cached:
-        save_list_to_pickle(course_number_file_path, new_cached_course_numbers)
     return all_course_data
