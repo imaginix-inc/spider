@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 import json
 import time
 import re
+from src.models import UCLACourseDB
 
 # Add project root to Python path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -194,7 +195,68 @@ from typing import List
 from urllib.parse import urlencode
 import httpx
 
-async def get_course_summary(course_data: dict, YearTerm="25W") -> dict:
+def get_course_details(content: str) -> List[UCLACourseDB]:
+    soup = BeautifulSoup(content, 'html.parser')
+    sections = []
+    
+    # 修改选择器以更灵活地匹配行
+    rows = soup.select('div[class*="row-fluid"][class*="data_row"]')
+    
+    # Find all section rows
+    for row in rows:
+        section = {}
+        
+        # Get section number
+        section_elem = row.find('div', class_='cls-section')
+        if section_elem:
+            section['section'] = section_elem.find('a').text.strip()
+            
+        # Get enrollment status
+        status_elem = row.find('div', class_='statusColumn')
+        if status_elem:
+            status_text = status_elem.text.strip()
+            enrollment_info = status_text.split('\n')
+            section['status'] = enrollment_info[0].strip()
+            if len(enrollment_info) > 1:
+                enrolled, total = map(int, enrollment_info[1].split('of')[0:2])
+                section['enrolled'] = enrolled
+                section['capacity'] = total
+                
+        # Get waitlist status
+        waitlist_elem = row.find('div', class_='waitlistColumn')
+        if waitlist_elem:
+            section['waitlist'] = waitlist_elem.text.strip()
+            
+        # Get days and time
+        time_elem = row.find('div', class_='timeColumn')
+        if time_elem:
+            days_elem = time_elem.find('div', class_='dayColumn') or time_elem.find('div', attrs={'id': lambda x: x and x.endswith('-days_data')})
+            if days_elem:
+                section['days'] = days_elem.text.strip()
+            time_text = time_elem.find('p')
+            if time_text:
+                section['time'] = time_text.text.strip()
+                
+        # Get location
+        location_elem = row.find('div', class_='locationColumn')
+        if location_elem:
+            section['location'] = location_elem.text.strip()
+            
+        # Get units
+        units_elem = row.find('div', class_='unitsColumn')
+        if units_elem:
+            section['units'] = units_elem.text.strip()
+            
+        # Get instructor
+        instructor_elem = row.find('div', class_='instructorColumn')
+        if instructor_elem:
+            section['instructor_name'] = instructor_elem.text.strip()
+        sections.append(UCLACourseDB(**section))
+    return sections
+    
+
+
+async def get_course_summary(course_data: dict, YearTerm="25W") -> List[UCLACourseDB]:
     """Get detailed course summary for a specific course."""
     base_url = "https://sa.ucla.edu/ro/public/soc/Results/GetCourseSummary"
     
@@ -206,51 +268,65 @@ async def get_course_summary(course_data: dict, YearTerm="25W") -> dict:
         "IsRoot": course_data["IsRoot"],
         "SessionGroup": course_data["SessionGroup"],
         "ClassNumber": course_data["ClassNumber"],
-        "SequenceNumber": course_data["SequenceNumber"],
+        "SequenceNumber": None,
         "Path": course_data["Path"],
         "MultiListedClassFlag": course_data["MultiListedClassFlag"],
         "Token": course_data["Token"]
     }
 
-    # Construct filter flags - simplified to essential parameters
+    # Construct filter flags
     filter_flags = {
         "enrollment_status": "O,W,C,X,T,S",
         "advanced": "y",
-        "individual_studies": "n"
+        "meet_days": "F",
+        "start_time": "8:00 am",
+        "end_time": "3:00 pm",
+        "meet_locations": None,
+        "meet_units": None,
+        "instructor": None,
+        "class_career": None,
+        "impacted": "N",
+        "enrollment_restrictions": None,
+        "enforced_requisites": None,
+        "individual_studies": "n",
+        "summer_session": None
     }
 
     # Create query parameters
-    query_params = {
-        "model": json.dumps(model),
-        "filterFlags": json.dumps(filter_flags)
+    params = {
+        "model": json.dumps(model, separators=(',', ':'), ensure_ascii=False),
+        "FilterFlags": json.dumps(filter_flags, separators=(',', ':'), ensure_ascii=False),
+        "_": str(int(time.time() * 1000))
     }
 
-    # Make the request with proper headers
     async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "application/json, text/javascript, */*; q=0.01",
-            "Accept-Language": "en-US,en;q=0.9",
-            "X-Requested-With": "XMLHttpRequest",
-            "Referer": "https://sa.ucla.edu/ro/public/soc"
-        }
 
         try:
             response = await client.get(
-                base_url, 
-                params=query_params,
-                headers=headers
+                base_url,
+                params=params
             )
             if response.status_code == 200:
-                return response.json()
+                data = response.text
+                courses = get_course_details(data)
+                for course in courses:
+                    course.term = model["Term"]
+                    course.subject_area_code = model["SubjectAreaCode"]
+                    course.catalog_number = model["CatalogNumber"]
+                    course.class_number = model["ClassNumber"]
+                    course.sequence_number = model["SequenceNumber"]
+                    course.path = model["Path"]
+                    course.token = model["Token"]
+                return courses
             else:
-                print(f"Error getting course summary: {response.status_code}")
-                return None
+                print(f"HTTP Error {response.status_code}: {response.text}")
+                return []
+                
         except Exception as e:
-            print(f"Exception getting course summary: {e}")
-            return None
+            print(f"Request error: {e}")
+            return []
 
-async def extract_course_data(response_json: dict) -> List[dict]:
+async def extract_course_data(response_json: dict) -> List[UCLACourseDB]:
     """Extract course data from the ClassPartialViewData HTML content."""
     courses = []
     
@@ -274,7 +350,7 @@ async def extract_course_data(response_json: dict) -> List[dict]:
     return courses
 
 # Update get_courses_list to use the new methods
-async def get_courses_list(department: str, YearTerm="25W") -> List[dict]:
+async def get_courses_list(department: str, YearTerm="25W") -> List[UCLACourseDB]:
     """Get all courses for a given department and term."""
     base_url = "https://sa.ucla.edu/ro/public/soc/Results/GetCourseTitlesPage"
 
@@ -318,9 +394,6 @@ async def get_courses_list(department: str, YearTerm="25W") -> List[dict]:
         
         try:
             response = await client.get(base_url, params=params, headers=headers)
-            print(f"Status Code: {response.status_code}")
-            print(f"Response Headers: {response.headers}")
-            print(f"Response Content: {response.text[:200]}...")  # Print first 200 chars
             
             if response.status_code == 200:
                 response_json = response.json()
@@ -331,7 +404,7 @@ async def get_courses_list(department: str, YearTerm="25W") -> List[dict]:
                 for course in courses:
                     summary = await get_course_summary(course, YearTerm)
                     if summary:
-                        detailed_courses.append(summary)
+                        detailed_courses.extend(summary)
                 
                 return detailed_courses
             else:
@@ -342,10 +415,12 @@ async def get_courses_list(department: str, YearTerm="25W") -> List[dict]:
             print(f"Request Error: {e}")
             return []
 
-async def get_all_courses() -> List:
+async def get_all_courses() -> List[UCLACourseDB]:
     """Get all courses for all departments."""
     all_courses = []
-
+    # all_courses.extend(await get_courses_list(departments[0]))
+    for department in departments:
+        all_courses.extend(await get_courses_list(department))
     return all_courses
 
 async def main() -> List[BaseDB]:
@@ -354,4 +429,4 @@ async def main() -> List[BaseDB]:
     return all_courses
 
 if __name__ == "__main__":
-    asyncio.run(get_courses_list(departments[0]))
+    asyncio.run(main())

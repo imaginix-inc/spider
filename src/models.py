@@ -146,6 +146,25 @@ class UCSCCourseDB(BaseDB):
     end_time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     units: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
+class UCLACourseDB(BaseDB):
+    __tablename__ = 'ucla_courses'
+    section: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    waitlist: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    days: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    units: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    term: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    subject_area_code: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    catalog_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    class_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    sequence_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    path: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+
+
 
 class UCSFCourseDB(BaseDB):
     __tablename__ = 'ucsf_courses'
