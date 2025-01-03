@@ -166,3 +166,11 @@ class UCLACourseDB(BaseDB):
 
 
 
+class UCSFCourseDB(BaseDB):
+    __tablename__ = 'ucsf_courses'
+    subject: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    prefix: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    course_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    units: Mapped[Optional[int]] = mapped_column(String, nullable=True)
+    activity: Mapped[Optional[int]] = mapped_column(String, nullable=True)
