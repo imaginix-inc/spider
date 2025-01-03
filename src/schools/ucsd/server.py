@@ -118,7 +118,7 @@ def extract_page_content(page_source) -> List[UCSDCourseDB]:
                 print(f"Warning: Error processing row: {str(e)}")
                 continue
 
-    print(f"Extracted {len(courses)} courses from current page")
+    # print(f"Extracted {len(courses)} courses from current page")
     return courses  # 返回课程列表
 
 
