@@ -118,7 +118,7 @@ def extract_page_content(page_source) -> List[UCSDCourseDB]:
                 print(f"Warning: Error processing row: {str(e)}")
                 continue
 
-    print(f"Extracted {len(courses)} courses from current page")
+    # print(f"Extracted {len(courses)} courses from current page")
     return courses  # 返回课程列表
 
 
@@ -152,7 +152,7 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
     # Process each department with a fresh driver
     for department in departments:
         dept_start_time = time.time()
-        print(f"Processing department: {department}")
+        # print(f"Processing department: {department}")
 
         driver = webdriver.Chrome(options=chrome_options)
         try:
@@ -193,7 +193,7 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
                     page_content = driver.page_source
                     page_courses = extract_page_content(page_content)
                     all_courses.extend(page_courses)  # 将当前页面的课程添加到总列表中
-                    print(f"Page {page_number}: {len(page_courses)} courses processed")
+                    # print(f"Page {page_number}: {len(page_courses)} courses processed")
 
                     try:
                         # 等待并检查分页信息
@@ -222,14 +222,14 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
 
         dept_end_time = time.time()
         dept_duration = dept_end_time - dept_start_time
-        print(f"Department {department} completed in {dept_duration:.2f} seconds")
-        print(f"Courses found in {department}: {len(all_courses)}")
-        print("-" * 100)
+        # print(f"Department {department} completed in {dept_duration:.2f} seconds")
+        # print(f"Courses found in {department}: {len(all_courses)}")
+        # print("-" * 100)
 
-    total_duration = time.time() - start_time
-    print(f"Total courses scraped: {len(all_courses)}")
-    print(f"Total scraping time: {total_duration:.2f} seconds")
-    print(f"Average time per course: {total_duration / len(all_courses):.2f} seconds")
+    # total_duration = time.time() - start_time
+    # print(f"Total courses scraped: {len(all_courses)}")
+    # print(f"Total scraping time: {total_duration:.2f} seconds")
+    # print(f"Average time per course: {total_duration / len(all_courses):.2f} seconds")
 
     return all_courses
 
