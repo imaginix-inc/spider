@@ -32,7 +32,7 @@ class BaseDB(Base):
 
 class UCRCourseDB(BaseDB):
     __abstract__ = False
-    __tablename__ = 'ucr_courses'
+    __tablename__ = 'rumi_ucr_class_schedule_2025_spring'
     section: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     units: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     offering_title: Mapped[Optional[str]
@@ -46,7 +46,7 @@ class UCRCourseDB(BaseDB):
 
 
 class USFCourseDB(BaseDB):
-    __tablename__ = 'usf_courses'
+    __tablename__ = 'rumi_usf_class_schedule_2025_spring'
     term: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, doc="The term of the course")
     time: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
@@ -90,7 +90,7 @@ class USFCourseDB(BaseDB):
 
 
 class UCICourseDB(BaseDB):
-    __tablename__ = 'uci_courses'
+    __tablename__ = 'rumi_uci_class_schedule_2025_spring'
 
     code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
@@ -113,7 +113,7 @@ class UCICourseDB(BaseDB):
 
 
 class UCSDCourseDB(BaseDB):
-    __tablename__ = 'ucsd_courses'
+    __tablename__ = 'rumi_ucsd_class_schedule_2025_spring'
 
     course_number: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True)
@@ -138,7 +138,7 @@ class UCSDCourseDB(BaseDB):
 
 
 class UCSCCourseDB(BaseDB):
-    __tablename__ = 'ucsc_courses'
+    __tablename__ = 'rumi_ucsc_class_schedule_2025_spring'
     subject: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     display_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
@@ -164,7 +164,7 @@ class UCSCCourseDB(BaseDB):
 
 
 class UCLACourseDB(BaseDB):
-    __tablename__ = 'ucla_courses'
+    __tablename__ = 'rumi_ucla_class_schedule_2025_spring'
     section: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     waitlist: Mapped[Optional[str]] = mapped_column(String, nullable=True)
@@ -185,7 +185,7 @@ class UCLACourseDB(BaseDB):
 
 
 class UCSFCourseDB(BaseDB):
-    __tablename__ = 'ucsf_courses'
+    __tablename__ = 'rumi_ucsf_class_schedule_2025_spring'
     subject: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     prefix: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     number: Mapped[Optional[str]] = mapped_column(String, nullable=True)

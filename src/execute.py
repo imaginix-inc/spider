@@ -14,8 +14,6 @@ async def process_school(spider: Spider) -> float:
     pbar = tqdm(total=len(datas), desc=f"Processing {spider.school_name}")
     from sqlalchemy import inspect
     inspector = inspect(engine)
-    spider.scheme.__tablename__ = f"rumi_{
-        spider.school_name}_class_schedule_2025_spring"
     if inspector.has_table(spider.scheme.__tablename__):
         spider.scheme.metadata.drop_all(engine)
     spider.scheme.metadata.create_all(engine)
