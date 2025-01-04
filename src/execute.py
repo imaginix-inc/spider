@@ -5,6 +5,7 @@ from sqlalchemy import insert
 import asyncio
 from tqdm import tqdm
 import time
+import traceback
 
 
 async def process_school(spider: Spider) -> float:
@@ -34,7 +35,8 @@ async def execute():
     spend_time = await asyncio.gather(*tasks, return_exceptions=True)
     for (spider, time) in zip(spiders, spend_time):
         if isinstance(time, Exception):
-            print(f"Error processing {spider.school_name}: {time}")
+            print(f"Error processing {spider.school_name}: {
+                  time}, {traceback.format_exception(time)}")
         else:
             print(f"{spider.school_name} spend {time} seconds")
 if __name__ == '__main__':
