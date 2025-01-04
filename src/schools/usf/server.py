@@ -9,6 +9,7 @@ from src.models import USFCourseDB, BaseDB
 from src.process import post_process
 from pydantic import BaseModel, Field
 from src.settings import settings
+import tqdm
 
 
 class CourseModel(BaseModel):
@@ -96,7 +97,7 @@ async def get_course_links() -> List[BaseDB]:
         # print(paired_rows[0][0])
 
         final_courses: List[BaseDB] = []
-        for course in paired_rows:
+        for course in tqdm.tqdm(paired_rows, desc="Extracting courses"):
             links = course[0].find_all('a', href=True)
             link = list(filter(lambda x: x['href'].startswith(
                 '/PROD/bwckschd.p_disp_detail_sched'), links))[0]
@@ -128,15 +129,15 @@ async def get_course_links() -> List[BaseDB]:
                     source_url=link
                 )
                 courses.append(course)
-            # course_detect = await load_class(f"https://ssb-prod.ec.usfca.edu{link}")
-            # data = course_detect.model_dump()
-            # for course in courses:
-            #     # assign values according to data
-            #     for field in data.keys():
-            #         if hasattr(course, field):
-            #             setattr(course, field, data[field])
-            # courses = await post_process(courses, [course.title for course in courses], [course.title for course in courses])
-            # final_courses.extend(courses)
+            course_detect = await load_class(f"https://ssb-prod.ec.usfca.edu{link}")
+            data = course_detect.model_dump()
+            for course in courses:
+                # assign values according to data
+                for field in data.keys():
+                    if hasattr(course, field):
+                        setattr(course, field, data[field])
+            courses = await post_process(courses, [course.title for course in courses], [course.title for course in courses])
+            final_courses.extend(courses)
         return final_courses
 
 prompt_template = ChatPromptTemplate.from_messages(
@@ -158,14 +159,15 @@ async def load_class(link: str) -> CourseModel:
         async with httpx.AsyncClient() as client:
             response = await client.get(link, timeout=15)
             soup = BeautifulSoup(response.text, 'html.parser')
+            llm = ChatOpenAI(
+                model="gpt-4o-mini", max_retries=5, timeout=30, api_key=settings.openai_api_key)
+            structured_llm = llm.with_structured_output(schema=CourseModel)
+
+            prompt: List[Dict[str, Any]] = await prompt_template.ainvoke({"text": soup.get_text()})
+            data: CourseModel = await structured_llm.ainvoke(prompt)
     except Exception as e:
         print(f'Error when fetch {link}: {e}')
-    llm = ChatOpenAI(
-        model="gpt-4o-mini", max_retries=5, timeout=30, api_key=settings.openai_api_key)
-    structured_llm = llm.with_structured_output(schema=CourseModel)
 
-    prompt: List[Dict[str, Any]] = await prompt_template.ainvoke({"text": soup.get_text()})
-    data: CourseModel = await structured_llm.ainvoke(prompt)
     return data
 
 

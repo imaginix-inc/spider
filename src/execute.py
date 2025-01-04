@@ -11,13 +11,16 @@ async def process_school(spider: Spider) -> float:
     begin_time = time.time()
     datas = await spider.func()
     pbar = tqdm(total=len(datas), desc=f"Processing {spider.school_name}")
-    spider.scheme.metadata.drop_all(engine)
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+    if inspector.has_table(spider.scheme.__tablename__):
+        spider.scheme.metadata.drop_all(engine)
     spider.scheme.metadata.create_all(engine)
     async with AsyncSessionLocal() as session:
         async with session.begin():
             session.add_all(datas)
             await session.commit()
-
+    print(f"Insert {len(datas)} data to {spider.school_name} database")
     pbar.close()
     return time.time() - begin_time
 

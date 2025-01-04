@@ -13,8 +13,8 @@ class Spider:
 
 
 spiders: List[Spider] = [
-    # Spider(school_name='ucr', func=ucr.main,
-    #        scheme=models.UCRCourseDB, school_id=1076),
+    Spider(school_name='ucr', func=ucr.main,
+           scheme=models.UCRCourseDB, school_id=1076),
     # Spider(school_name='usf', func=usf.main,
     #        scheme=models.USFCourseDB, school_id=1600),
     # Spider(school_name='uci', func=uci.main,
@@ -25,6 +25,6 @@ spiders: List[Spider] = [
     #        scheme=models.UCSDCourseDB, school_id=1079),
     # Spider(school_name='ucla', func=ucla.main,
     #        scheme=models.UCLACourseDB, school_id=1075),
-    Spider(school_name='ucsf', func=ucsf.main,
-           scheme=models.UCSFCourseDB, school_id=1080),
+    # Spider(school_name='ucsf', func=ucsf.main,
+    #        scheme=models.UCSFCourseDB, school_id=1080),
 ]
