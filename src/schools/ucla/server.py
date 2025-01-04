@@ -1,3 +1,11 @@
+from typing import Dict
+import tqdm
+from typing import List
+from src.models import BaseDB, UCSDCourseDB
+from typing import List
+from bs4 import BeautifulSoup
+import asyncio
+import httpx
 import sys
 from pathlib import Path
 from urllib.parse import urlencode
@@ -9,11 +17,6 @@ from src.models import UCLACourseDB
 # Add project root to Python path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
-import httpx
-import asyncio
-from bs4 import BeautifulSoup
-from typing import  List
-from src.models import BaseDB, UCSDCourseDB
 
 departments = [
     {"text": "Aerospace Studies (AERO ST)", "value": "AERO ST"},
@@ -40,7 +43,8 @@ departments = [
     {"text": "Biomathematics (BIOMATH)", "value": "BIOMATH"},
     {"text": "Biomedical Research (BMD RES)", "value": "BMD RES"},
     {"text": "Biostatistics (BIOSTAT)", "value": "BIOSTAT"},
-    {"text": "Central and East European Studies (C&EE ST)", "value": "C&EE ST"},
+    {"text": "Central and East European Studies (C&EE ST)",
+     "value": "C&EE ST"},
     {"text": "Chemical Engineering (CH ENGR)", "value": "CH ENGR"},
     {"text": "Chemistry and Biochemistry (CHEM)", "value": "CHEM"},
     {"text": "Chicana/o and Central American Studies (CCAS)", "value": "CCAS"},
@@ -52,21 +56,25 @@ departments = [
     {"text": "Community Engagement and Social Change (CESC)", "value": "CESC"},
     {"text": "Community Health Sciences (COM HLT)", "value": "COM HLT"},
     {"text": "Comparative Literature (COM LIT)", "value": "COM LIT"},
-    {"text": "Computational and Systems Biology (C&S BIO)", "value": "C&S BIO"},
+    {"text": "Computational and Systems Biology (C&S BIO)",
+     "value": "C&S BIO"},
     {"text": "Computer Science (COM SCI)", "value": "COM SCI"},
-    {"text": "Conservation of Cultural Heritage (CLT HTG)", "value": "CLT HTG"},
+    {"text": "Conservation of Cultural Heritage (CLT HTG)",
+     "value": "CLT HTG"},
     {"text": "Dance", "value": "DANCE"},
     {"text": "Data Science in Biomedicine (DS BMED)", "value": "DS BMED"},
     {"text": "Design / Media Arts (DESMA)", "value": "DESMA"},
     {"text": "Digital Humanities (DGT HUM)", "value": "DGT HUM"},
     {"text": "Disability Studies (DIS STD)", "value": "DIS STD"},
     {"text": "Dutch", "value": "DUTCH"},
-    {"text": "Earth, Planetary, and Space Sciences (EPS SCI)", "value": "EPS SCI"},
+    {"text": "Earth, Planetary, and Space Sciences (EPS SCI)",
+     "value": "EPS SCI"},
     {"text": "East Asian Studies (EA STDS)", "value": "EA STDS"},
     {"text": "Ecology and Evolutionary Biology (EE BIOL)", "value": "EE BIOL"},
     {"text": "Economics (ECON)", "value": "ECON"},
     {"text": "Education (EDUC)", "value": "EDUC"},
-    {"text": "Electrical and Computer Engineering (EC ENGR)", "value": "EC ENGR"},
+    {"text": "Electrical and Computer Engineering (EC ENGR)",
+     "value": "EC ENGR"},
     {"text": "Engineering (ENGR)", "value": "ENGR"},
     {"text": "English (ENGL)", "value": "ENGL"},
     {"text": "English as A Second Language (ESL)", "value": "ESL"},
@@ -87,7 +95,8 @@ departments = [
     {"text": "Global Health (GLB HLT)", "value": "GLB HLT"},
     {"text": "Global Jazz Studies (GJ STDS)", "value": "GJ STDS"},
     {"text": "Global Studies (GLBL ST)", "value": "GLBL ST"},
-    {"text": "Graduate Student Professional Development (GRAD PD)", "value": "GRAD PD"},
+    {"text": "Graduate Student Professional Development (GRAD PD)",
+     "value": "GRAD PD"},
     {"text": "Greek", "value": "GREEK"},
     {"text": "Health Policy and Management (HLT POL)", "value": "HLT POL"},
     {"text": "Healthcare Administration (HLT ADM)", "value": "HLT ADM"},
@@ -97,12 +106,14 @@ departments = [
     {"text": "Honors Collegium (HNRS)", "value": "HNRS"},
     {"text": "Human Genetics (HUM GEN)", "value": "HUM GEN"},
     {"text": "Hungarian (HNGAR)", "value": "HNGAR"},
-    {"text": "Indigenous Languages of the Americas (IL AMER)", "value": "IL AMER"},
+    {"text": "Indigenous Languages of the Americas (IL AMER)",
+     "value": "IL AMER"},
     {"text": "Indo-European Studies (I E STD)", "value": "I E STD"},
     {"text": "Indonesian (INDO)", "value": "INDO"},
     {"text": "Information Studies (INF STD)", "value": "INF STD"},
     {"text": "International and Area Studies (I A STD)", "value": "I A STD"},
-    {"text": "International Development Studies (INTL DV)", "value": "INTL DV"},
+    {"text": "International Development Studies (INTL DV)",
+     "value": "INTL DV"},
     {"text": "International Migration Studies (I M STD)", "value": "I M STD"},
     {"text": "Iranian", "value": "IRANIAN"},
     {"text": "Islamic Studies (ISLM ST)", "value": "ISLM ST"},
@@ -113,28 +124,38 @@ departments = [
     {"text": "Latin", "value": "LATIN"},
     {"text": "Latin American Studies (LATN AM)", "value": "LATN AM"},
     {"text": "Law", "value": "LAW"},
-    {"text": "Lesbian, Gay, Bisexual, Transgender, and Queer Studies (LGBTQS)", "value": "LGBTQS"},
+    {"text":
+        "Lesbian, Gay, Bisexual, Transgender, and Queer Studies (LGBTQS)", "value": "LGBTQS"},
     {"text": "Life Sciences (LIFESCI)", "value": "LIFESCI"},
     {"text": "Linguistics (LING)", "value": "LING"},
     {"text": "Management (MGMT)", "value": "MGMT"},
     {"text": "Management-Executive MBA (MGMTEX)", "value": "MGMTEX"},
     {"text": "Management-Full-Time MBA (MGMTFT)", "value": "MGMTFT"},
     {"text": "Management-Fully Employed MBA (MGMTFE)", "value": "MGMTFE"},
-    {"text": "Management-Global Executive MBA Asia Pacific (MGMTGEX)", "value": "MGMTGEX"},
-    {"text": "Management-Master of Financial Engineering (MGMTMFE)", "value": "MGMTMFE"},
-    {"text": "Management-Master of Science in Business Analytics (MGMTMSA)", "value": "MGMTMSA"},
+    {"text":
+        "Management-Global Executive MBA Asia Pacific (MGMTGEX)", "value": "MGMTGEX"},
+    {"text":
+        "Management-Master of Financial Engineering (MGMTMFE)", "value": "MGMTMFE"},
+    {"text":
+        "Management-Master of Science in Business Analytics (MGMTMSA)", "value": "MGMTMSA"},
     {"text": "Management-PhD (MGMTPHD)", "value": "MGMTPHD"},
-    {"text": "Materials Science and Engineering (MAT SCI)", "value": "MAT SCI"},
+    {"text": "Materials Science and Engineering (MAT SCI)",
+     "value": "MAT SCI"},
     {"text": "Mathematics (MATH)", "value": "MATH"},
-    {"text": "Mechanical and Aerospace Engineering (MECH&AE)", "value": "MECH&AE"},
-    {"text": "Microbiology, Immunology, and Molecular Genetics (MIMG)", "value": "MIMG"},
+    {"text": "Mechanical and Aerospace Engineering (MECH&AE)",
+     "value": "MECH&AE"},
+    {"text":
+        "Microbiology, Immunology, and Molecular Genetics (MIMG)", "value": "MIMG"},
     {"text": "Middle Eastern Studies (M E STD)", "value": "M E STD"},
     {"text": "Military Science (MIL SCI)", "value": "MIL SCI"},
-    {"text": "Molecular and Medical Pharmacology (M PHARM)", "value": "M PHARM"},
+    {"text": "Molecular and Medical Pharmacology (M PHARM)",
+     "value": "M PHARM"},
     {"text": "Molecular Biology (MOL BIO)", "value": "MOL BIO"},
     {"text": "Molecular Toxicology (MOL TOX)", "value": "MOL TOX"},
-    {"text": "Molecular, Cell, and Developmental Biology (MCD BIO)", "value": "MCD BIO"},
-    {"text": "Molecular, Cellular, and Integrative Physiology (MC&IP)", "value": "MC&IP"},
+    {"text":
+        "Molecular, Cell, and Developmental Biology (MCD BIO)", "value": "MCD BIO"},
+    {"text":
+        "Molecular, Cellular, and Integrative Physiology (MC&IP)", "value": "MC&IP"},
     {"text": "Music (MUSC)", "value": "MUSC"},
     {"text": "Music Industry (MSC IND)", "value": "MSC IND"},
     {"text": "Musicology (MUSCLG)", "value": "MUSCLG"},
@@ -154,7 +175,8 @@ departments = [
     {"text": "Political Science (POL SCI)", "value": "POL SCI"},
     {"text": "Portuguese (PORTGSE)", "value": "PORTGSE"},
     {"text": "Program in Computing (COMPTNG)", "value": "COMPTNG"},
-    {"text": "Psychiatry and Biobehavioral Sciences (PSYCTRY)", "value": "PSYCTRY"},
+    {"text": "Psychiatry and Biobehavioral Sciences (PSYCTRY)",
+     "value": "PSYCTRY"},
     {"text": "Psychology (PSYCH)", "value": "PSYCH"},
     {"text": "Public Affairs (PUB AFF)", "value": "PUB AFF"},
     {"text": "Public Health (PUB HLT)", "value": "PUB HLT"},
@@ -190,27 +212,22 @@ departments = [
 ]
 
 
-import json
-from typing import List
-from urllib.parse import urlencode
-import httpx
-
 def get_course_details(content: str) -> List[UCLACourseDB]:
     soup = BeautifulSoup(content, 'html.parser')
     sections = []
-    
+
     # 修改选择器以更灵活地匹配行
     rows = soup.select('div[class*="row-fluid"][class*="data_row"]')
-    
+
     # Find all section rows
     for row in rows:
         section = {}
-        
+
         # Get section number
         section_elem = row.find('div', class_='cls-section')
         if section_elem:
             section['section'] = section_elem.find('a').text.strip()
-            
+
         # Get enrollment status
         status_elem = row.find('div', class_='statusColumn')
         if status_elem:
@@ -221,45 +238,45 @@ def get_course_details(content: str) -> List[UCLACourseDB]:
                 enrolled, total = map(int, enrollment_info[1].split('of')[0:2])
                 section['enrolled'] = enrolled
                 section['capacity'] = total
-                
+
         # Get waitlist status
         waitlist_elem = row.find('div', class_='waitlistColumn')
         if waitlist_elem:
             section['waitlist'] = waitlist_elem.text.strip()
-            
+
         # Get days and time
         time_elem = row.find('div', class_='timeColumn')
         if time_elem:
-            days_elem = time_elem.find('div', class_='dayColumn') or time_elem.find('div', attrs={'id': lambda x: x and x.endswith('-days_data')})
+            days_elem = time_elem.find('div', class_='dayColumn') or time_elem.find(
+                'div', attrs={'id': lambda x: x and x.endswith('-days_data')})
             if days_elem:
                 section['days'] = days_elem.text.strip()
             time_text = time_elem.find('p')
             if time_text:
                 section['time'] = time_text.text.strip()
-                
+
         # Get location
         location_elem = row.find('div', class_='locationColumn')
         if location_elem:
             section['location'] = location_elem.text.strip()
-            
+
         # Get units
         units_elem = row.find('div', class_='unitsColumn')
         if units_elem:
             section['units'] = units_elem.text.strip()
-            
+
         # Get instructor
         instructor_elem = row.find('div', class_='instructorColumn')
         if instructor_elem:
             section['instructor_name'] = instructor_elem.text.strip()
         sections.append(UCLACourseDB(**section))
     return sections
-    
 
 
 async def get_course_summary(course_data: dict, YearTerm="25W") -> List[UCLACourseDB]:
     """Get detailed course summary for a specific course."""
     base_url = "https://sa.ucla.edu/ro/public/soc/Results/GetCourseSummary"
-    
+
     # Construct model from course data
     model = {
         "Term": YearTerm,
@@ -321,25 +338,27 @@ async def get_course_summary(course_data: dict, YearTerm="25W") -> List[UCLACour
             else:
                 print(f"HTTP Error {response.status_code}: {response.text}")
                 return []
-                
+
         except Exception as e:
             print(f"Request error: {e}")
             return []
 
+
 async def extract_course_data(response_json: dict) -> List[UCLACourseDB]:
     """Extract course data from the ClassPartialViewData HTML content."""
     courses = []
-    
+
     # Get HTML content from ClassPartialViewData
     html_content = response_json.get("ClassPartialViewData", "")
     soup = BeautifulSoup(html_content, 'html.parser')
-    
+
     # Find all script tags containing course data
     scripts = soup.find_all('script')
     for script in scripts:
         if script.string and 'AddToCourseData' in script.string:
             # Extract the JSON data using regex
-            match = re.search(r'AddToCourseData\("([^"]+)",(\{[^}]+\})', script.string)
+            match = re.search(
+                r'AddToCourseData\("([^"]+)",(\{[^}]+\})', script.string)
             if match:
                 try:
                     course_id = match.group(1)
@@ -350,7 +369,9 @@ async def extract_course_data(response_json: dict) -> List[UCLACourseDB]:
     return courses
 
 # Update get_courses_list to use the new methods
-async def get_courses_list(department: str, YearTerm="25W") -> List[UCLACourseDB]:
+
+
+async def get_courses_list(department: Dict[str, str], YearTerm="25W") -> List[UCLACourseDB]:
     """Get all courses for a given department and term."""
     base_url = "https://sa.ucla.edu/ro/public/soc/Results/GetCourseTitlesPage"
 
@@ -391,37 +412,39 @@ async def get_courses_list(department: str, YearTerm="25W") -> List[UCLACourseDB
             "Referer": "https://sa.ucla.edu/ro/public/soc",
             "Connection": "keep-alive",
         }
-        
+
         try:
             response = await client.get(base_url, params=params, headers=headers)
-            
+
             if response.status_code == 200:
                 response_json = response.json()
                 courses = await extract_course_data(response_json)
-                
+
                 # Get detailed summary for each course
                 detailed_courses = []
                 for course in courses:
                     summary = await get_course_summary(course, YearTerm)
                     if summary:
                         detailed_courses.extend(summary)
-                
+
                 return detailed_courses
             else:
                 print(f"Error Status: {response.status_code}")
                 return []
-                
+
         except Exception as e:
             print(f"Request Error: {e}")
             return []
+
 
 async def get_all_courses() -> List[UCLACourseDB]:
     """Get all courses for all departments."""
     all_courses = []
     # all_courses.extend(await get_courses_list(departments[0]))
-    for department in departments:
+    for department in tqdm.tqdm(departments, desc="Fetch departments"):
         all_courses.extend(await get_courses_list(department))
     return all_courses
+
 
 async def main() -> List[BaseDB]:
     """Main entry point for UCSD course scraping."""

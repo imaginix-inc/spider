@@ -33,6 +33,7 @@ async-cron = "^1.6.2"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.0.1"
+types-requests = "^2.32.0.20241016"
 
 [build-system]
 requires = ["poetry-core"]

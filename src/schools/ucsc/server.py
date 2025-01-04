@@ -7,6 +7,7 @@ from tqdm.asyncio import tqdm
 from typing import List
 from src.process import post_process
 
+
 class Course:
     def __init__(self, id, subject, number, display_name, instruction_mode, academic_group, start_date, end_date,
                  status, enrolled_count, max_enroll, waitlisted_count, max_waitlist, description, instructor_name,
@@ -52,6 +53,8 @@ connection_string = "host=127.0.0.1 port=15432 dbname=defaultdb user=doadmin pas
 cached_course_numbers = retrieve_list_from_pickle(course_number_file_path)
 
 # Asynchronous wrapper for get_course_info
+
+
 async def get_course_info(course_number, semaphore=None):
     if semaphore:
         async with semaphore:
@@ -84,9 +87,11 @@ def parse_course(json_data):
         instructors = meetings[0].get("instructors", [])
         if instructors and instructors[0].get("cruzid"):
             instructor_id = instructors[0].get("cruzid")
-            instructor_resp = requests.get(f"{instructor_base_url}/{instructor_id}")
+            instructor_resp = requests.get(
+                f"{instructor_base_url}/{instructor_id}")
             data = instructor_resp.json()
-            instructor_name = data.get("givenname", [])[0] + " " + data.get("sn", [])[0]
+            instructor_name = data.get("givenname", [])[
+                0] + " " + data.get("sn", [])[0]
         else:
             instructor_name = None  # Null if no cruzid
 
@@ -109,13 +114,17 @@ def parse_course(json_data):
         instructor_name=instructor_name,
         course_name=primary_section.get("title"),
         term=primary_section.get("strm"),
-        days=handle_tba(first_meeting.get("days"), "text") if first_meeting else None,
-        start_time=handle_tba(first_meeting.get("start_time"), "time") if first_meeting else None,
-        end_time=handle_tba(first_meeting.get("end_time"), "time") if first_meeting else None,
+        days=handle_tba(first_meeting.get("days"),
+                        "text") if first_meeting else None,
+        start_time=handle_tba(first_meeting.get(
+            "start_time"), "time") if first_meeting else None,
+        end_time=handle_tba(first_meeting.get("end_time"),
+                            "time") if first_meeting else None,
         units=primary_section.get("credits"),
     )
 
     return course
+
 
 def map_course_to_db(course: Course) -> UCSCCourseDB:
     return UCSCCourseDB(id=course.id, source_url=f"https://literature.ucsc.edu/courses/?d={course.subject}&t=2250",
