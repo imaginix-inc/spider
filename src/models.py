@@ -6,7 +6,11 @@ from sqlalchemy.ext.declarative import DeferredReflection
 from typing import Optional, List
 
 
-class BaseDB(DeclarativeBase):
+class Base(DeclarativeBase):
+    pass
+
+
+class BaseDB(Base):
     __abstract__ = True
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     source_url: Mapped[str] = mapped_column(String, nullable=True)
