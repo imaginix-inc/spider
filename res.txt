@@ -1,0 +1,2 @@
+Insert 7895 data to uci database
+Insert 1366 data to ucla database

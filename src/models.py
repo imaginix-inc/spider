@@ -48,25 +48,25 @@ class UCRCourseDB(BaseDB):
 class USFCourseDB(BaseDB):
     __tablename__ = 'rumi_usf_class_schedule_2025_spring'
     term: Mapped[Optional[str]] = mapped_column(
-        String(50), nullable=True, doc="The term of the course")
-    time: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    days: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    classroom: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+        String, nullable=True, doc="The term of the course")
+    time: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    days: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    classroom: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     date_range: Mapped[Optional[str]] = mapped_column(
-        String(50), nullable=True)
+        String, nullable=True)
     schedule_type: Mapped[Optional[str]] = mapped_column(
-        String(50), nullable=True, doc="The schedule type of the course")
-    title: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+        String, nullable=True, doc="The schedule type of the course")
+    title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     course_type: Mapped[Optional[str]] = mapped_column(
-        String(20), nullable=True)
+        String, nullable=True)
     course_code: Mapped[Optional[str]] = mapped_column(
-        String(20), nullable=True, doc="The course code")
+        String, nullable=True, doc="The course code")
     section: Mapped[Optional[str]] = mapped_column(
-        String(10), nullable=True, doc="The section of the course")
+        String, nullable=True, doc="The section of the course")
     campus: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True, doc="The campus where the course is offered")
+        String, nullable=True, doc="The campus where the course is offered")
     instructional_method: Mapped[Optional[str]] = mapped_column(
-        String(50), nullable=True, doc="The instructional method used in the course")
+        String, nullable=True, doc="The instructional method used in the course")
     credits: Mapped[Optional[str]] = mapped_column(
         String, nullable=True, doc="The number of credits for the course")
     capacity: Mapped[Optional[str]] = mapped_column(
@@ -82,11 +82,11 @@ class USFCourseDB(BaseDB):
     waitlist_remaining: Mapped[Optional[str]] = mapped_column(
         String, nullable=True, doc="The remaining spots on the waitlist")
     field_of_study: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True, doc="The field of study of the course")
+        String, nullable=True, doc="The field of study of the course")
     prerequisite_course: Mapped[Optional[str]] = mapped_column(
-        String(20), nullable=True, doc="The prerequisite course code")
+        String, nullable=True, doc="The prerequisite course code")
     minimum_grade: Mapped[Optional[str]] = mapped_column(
-        String(2), nullable=True, doc="The minimum grade required")
+        String, nullable=True, doc="The minimum grade required")
 
 
 class UCICourseDB(BaseDB):

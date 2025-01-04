@@ -6,6 +6,7 @@ import asyncio
 from tqdm.asyncio import tqdm
 from typing import List
 from src.process import post_process
+import httpx
 
 
 class Course:
@@ -69,12 +70,12 @@ async def fetch_course(course_number):
         async with session.get(f"{base_url}/{course_number}") as resp:
             if resp.status == 200:
                 data = await resp.json()
-                return parse_course(data)
+                return await parse_course(data)
     return None
 
 
 # Parse the JSON data to create a Course instance
-def parse_course(json_data):
+async def parse_course(json_data):
     primary_section = json_data.get("primary_section", {})
     meetings = json_data.get("meetings", [])
     first_meeting = meetings[0] if meetings else None
@@ -87,8 +88,9 @@ def parse_course(json_data):
         instructors = meetings[0].get("instructors", [])
         if instructors and instructors[0].get("cruzid"):
             instructor_id = instructors[0].get("cruzid")
-            instructor_resp = requests.get(
-                f"{instructor_base_url}/{instructor_id}")
+            async with httpx.AsyncClient() as client:
+                instructor_resp = await client.get(
+                    f"{instructor_base_url}/{instructor_id}")
             data = instructor_resp.json()
             instructor_name = data.get("givenname", [])[
                 0] + " " + data.get("sn", [])[0]

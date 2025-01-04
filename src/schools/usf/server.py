@@ -17,10 +17,10 @@ class CourseModel(BaseModel):
         default=None, description="The term of the course", max_length=50
     )
     course_code: Optional[str] = Field(
-        default=None, description="The course code", max_length=20
+        default=None, description="The course code", max_length=50
     )
     section: Optional[str] = Field(
-        default=None, description="The section of the course", max_length=10
+        default=None, description="The section of the course"
     )
     campus: Optional[str] = Field(
         default=None, description="The campus where the course is offered", max_length=100
@@ -97,47 +97,59 @@ async def get_course_links() -> List[BaseDB]:
         # print(paired_rows[0][0])
 
         final_courses: List[BaseDB] = []
-        for course in tqdm.tqdm(paired_rows, desc="Extracting courses"):
-            links = course[0].find_all('a', href=True)
-            link = list(filter(lambda x: x['href'].startswith(
-                '/PROD/bwckschd.p_disp_detail_sched'), links))[0]
-            link = link['href']
-            course_title_block: bs4.element.Tag = course[0]
-            course_title_a: bs4.element.Tag = course_title_block.find('a')
-            course_title = ' '.join(
-                course_title_a.text.replace('\n', '').split())
-            course_info_block: bs4.element.Tag = course[1]
+        semaphore = asyncio.Semaphore(50)
 
-            schedule_table = course_info_block.find(
-                'table', class_='datadisplaytable')
-            if schedule_table is None:
-                continue
-            times = schedule_table.find_all('tr')[1:]  # skip header
-            courses: List[USFCourseDB] = []
-            for time in times:
-                infos = list(map(lambda x: x.text, list(
-                    time.find_all("td"))))
-                course = USFCourseDB(
-                    course_type=infos[0],
-                    time=infos[1],
-                    days=infos[2],
-                    classroom=infos[3],
-                    date_range=infos[4],
-                    schedule_type=infos[5],
-                    instructor_name=infos[6],
-                    title=course_title,
-                    source_url=link
-                )
-                courses.append(course)
-            course_detect = await load_class(f"https://ssb-prod.ec.usfca.edu{link}")
-            data = course_detect.model_dump()
-            for course in courses:
-                # assign values according to data
-                for field in data.keys():
-                    if hasattr(course, field):
-                        setattr(course, field, data[field])
-            courses = await post_process(courses, [course.title for course in courses], [course.title for course in courses])
-            final_courses.extend(courses)
+        async def process_course(course):
+            async with semaphore:
+                links = course[0].find_all('a', href=True)
+                link = list(filter(lambda x: x['href'].startswith(
+                    '/PROD/bwckschd.p_disp_detail_sched'), links))[0]
+                link = link['href']
+                course_title_block: bs4.element.Tag = course[0]
+                course_title_a: bs4.element.Tag = course_title_block.find('a')
+                course_title = ' '.join(
+                    course_title_a.text.replace('\n', '').split())
+                course_info_block: bs4.element.Tag = course[1]
+
+                schedule_table = course_info_block.find(
+                    'table', class_='datadisplaytable')
+                if schedule_table is None:
+                    return []
+                times = schedule_table.find_all('tr')[1:]  # skip header
+                courses: List[USFCourseDB] = []
+                for time in times:
+                    infos = list(map(lambda x: x.text, list(
+                        time.find_all("td"))))
+                    course = USFCourseDB(
+                        course_type=infos[0],
+                        time=infos[1],
+                        days=infos[2],
+                        classroom=infos[3],
+                        date_range=infos[4],
+                        schedule_type=infos[5],
+                        instructor_name=infos[6],
+                        title=course_title,
+                        source_url=link
+                    )
+                    courses.append(course)
+                course_detect = await load_class(f"https://ssb-prod.ec.usfca.edu{link}")
+                if course_detect is None:
+                    return []
+                data = course_detect.model_dump()
+                for course in courses:
+                    # assign values according to data
+                    for field in data.keys():
+                        if hasattr(course, field):
+                            setattr(course, field, data[field])
+                courses = await post_process(courses, [course.title for course in courses], [course.title for course in courses], showBar=False)
+                return courses
+        tasks = [process_course(course) for course in paired_rows]
+        results = []
+        for task in tqdm.tqdm(asyncio.as_completed(tasks), total=len(tasks), desc="Extracting courses"):
+            result = await task
+            results.append(result)
+        for result in results:
+            final_courses.extend(result)
         return final_courses
 
 prompt_template = ChatPromptTemplate.from_messages(
@@ -154,21 +166,25 @@ prompt_template = ChatPromptTemplate.from_messages(
 )
 
 
-async def load_class(link: str) -> CourseModel:
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(link, timeout=15)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            llm = ChatOpenAI(
-                model="gpt-4o-mini", max_retries=5, timeout=30, api_key=settings.openai_api_key)
-            structured_llm = llm.with_structured_output(schema=CourseModel)
+async def load_class(link: str) -> CourseModel | None:
+    retries = 3
+    for attempt in range(retries):
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(link, timeout=15)
+                soup = BeautifulSoup(response.text, 'html.parser')
+                llm = ChatOpenAI(
+                    model="gpt-4o-mini", max_retries=5, timeout=30, api_key=settings.openai_api_key)
+                structured_llm = llm.with_structured_output(schema=CourseModel)
 
-            prompt: List[Dict[str, Any]] = await prompt_template.ainvoke({"text": soup.get_text()})
-            data: CourseModel = await structured_llm.ainvoke(prompt)
-    except Exception as e:
-        print(f'Error when fetch {link}: {e}')
-
-    return data
+                prompt: List[Dict[str, Any]] = await prompt_template.ainvoke({"text": soup.get_text()})
+                data: CourseModel = await structured_llm.ainvoke(prompt)
+                return data
+        except Exception as e:
+            print(f"""Error when fetching {link}, attempt {
+                  attempt + 1} of {retries}: {e}""")
+            if attempt == retries - 1:
+                return None
 
 
 async def main() -> List[BaseDB]:

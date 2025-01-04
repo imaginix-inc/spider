@@ -21,11 +21,15 @@ async def embedd_text(text: str | None):
         return resp.data[0].embedding
 
 
-async def post_process(datas: List[BaseDB], embedding_texts: List[str], full_texts: List[str]):
+async def post_process(datas: List[BaseDB], embedding_texts: List[str], full_texts: List[str], showBar=True):
     # get embeddings of texts
     # TODO: cache
     tasks = [embedd_text(text) for text in embedding_texts]
-    embeddings: List[CreateEmbeddingResponse] = await tqdm.gather(*[task for task in tasks if task is not None], desc="Post Process")
+    embeddings: List[CreateEmbeddingResponse]
+    if showBar:
+        embeddings = await tqdm.gather(*[task for task in tasks if task is not None], desc="Post Process")
+    else:
+        embeddings = await asyncio.gather(*[task for task in tasks if task is not None])
     # update datas
     for (data, embedding) in zip(datas, embeddings):
         data.name_vector = embedding
