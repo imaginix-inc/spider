@@ -1,5 +1,4 @@
 from typing import Dict
-import tqdm
 from typing import List
 from src.models import BaseDB, UCSDCourseDB
 from typing import List
@@ -13,7 +12,7 @@ import json
 import time
 import re
 from src.models import UCLACourseDB
-
+import tqdm
 # Add project root to Python path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
@@ -440,9 +439,17 @@ async def get_courses_list(department: Dict[str, str], YearTerm="25W") -> List[U
 async def get_all_courses() -> List[UCLACourseDB]:
     """Get all courses for all departments."""
     all_courses = []
-    # all_courses.extend(await get_courses_list(departments[0]))
-    for department in tqdm.tqdm(departments, desc="Fetch departments"):
-        all_courses.extend(await get_courses_list(department))
+    semaphore = asyncio.Semaphore(15)
+
+    async def get_courses_with_semaphore(department):
+        async with semaphore:
+            return await get_courses_list(department)
+
+    tasks = [get_courses_with_semaphore(department)
+             for department in departments]
+    for future in tqdm.tqdm(asyncio.as_completed(tasks), total=len(tasks), desc="Fetching Courses"):
+        all_courses.extend(await future)
+
     return all_courses
 
 
