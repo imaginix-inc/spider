@@ -1,2 +1,3 @@
 Insert 7895 data to uci database
 Insert 1366 data to ucla database
+Insert 1456 data to ucsc database
