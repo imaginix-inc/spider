@@ -207,11 +207,11 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
                         next_page_link.click()
                         page_number += 1
                     except TimeoutException:
-                        print(f"Reached last page for department {department}")
+                        # print(f"Reached last page for department {department}")
                         break
 
             except TimeoutException:
-                print(f"Timeout or no results for department {department}")
+                # print(f"Timeout or no results for department {department}")
                 continue
 
         except Exception as e:
@@ -235,6 +235,7 @@ def scrape_department_courses() -> List[UCSDCourseDB]:
 
 async def main() -> List[BaseDB]:
     """Main entry point for UCSD course scraping."""
+    print("Getting UCSD courses...")
     start_time = time.time()
     courses = scrape_department_courses()
     
@@ -242,7 +243,7 @@ async def main() -> List[BaseDB]:
     # print(f"Total courses scraped: {len(courses)}")
     # print(f"Total scraping time: {total_duration:.2f} seconds")
     # print(f"Average time per course: {total_duration/len(courses):.2f} seconds")
-    
+    print(f"Scraping {len(courses)} UCSD courses")
     return courses
 
 if __name__ == "__main__":
