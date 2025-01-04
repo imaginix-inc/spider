@@ -40,7 +40,7 @@ def extract_page_content(page_source) -> List[UCSDCourseDB]:
                         current_course_title = header_link.find('span', class_='boldtxt').text.strip()
                         current_units = header_link.next_sibling
                     else:
-                        print(f"Warning: Skipping malformed header - missing link")
+                        # print(f"Warning: Skipping malformed header - missing link")
                         continue
 
                 elif len(tds) >= 12 and 'class' in item.attrs and 'sectxt' in item['class']:
