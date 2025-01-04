@@ -9,17 +9,18 @@ import traceback
 
 
 async def process_school(spider: Spider) -> float:
+    print(f"Processing: {spider.school_name}")
     begin_time = time.time()
     datas = await spider.func()
 
     from sqlalchemy import inspect
-    inspector = inspect(engine)
-    if inspector.has_table(spider.scheme.__tablename__):
-        spider.scheme.metadata.drop_all(engine)
+    # inspector = inspect(engine)
+    # if inspector.has_table(spider.scheme.__tablename__):
+    #     spider.scheme.metadata.drop_all(engine)
     spider.scheme.metadata.create_all(engine)
     chunk_size = 100
     pbar = tqdm(total=len(datas) // chunk_size,
-                desc=f"Processing {spider.school_name}")
+                desc=f"Uploading {spider.school_name}")
     for i in range(0, len(datas), chunk_size):
         async with AsyncSessionLocal() as session:
             async with session.begin():

@@ -138,5 +138,6 @@ async def main() -> List[BaseDB]:
         for db, title in l:
             course_titles.append(title)
             courses_db.append(db)
+    print(f"Extracted {len(courses_db)} courses")
     courses_db = await post_process(courses_db, course_titles, course_titles)
     return courses_db

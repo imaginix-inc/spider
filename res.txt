@@ -1,2 +1,8 @@
 Insert 7895 data to uci database
-Insert 1366 data to ucla database
+Insert 0 data to ucsf database
+Insert 7895 data to uci database
+Insert 0 data to ucsf database
+Insert 0 data to ucsf database
+Insert 7895 data to uci database
+Insert 0 data to ucsf database
+Insert 1445 data to ucla database

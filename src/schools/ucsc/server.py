@@ -75,7 +75,7 @@ async def fetch_course(course_number):
 
 
 # Parse the JSON data to create a Course instance
-async def parse_course(json_data):
+async def parse_course(json_data) -> Course | None:
     primary_section = json_data.get("primary_section", {})
     meetings = json_data.get("meetings", [])
     first_meeting = meetings[0] if meetings else None
@@ -88,9 +88,23 @@ async def parse_course(json_data):
         instructors = meetings[0].get("instructors", [])
         if instructors and instructors[0].get("cruzid"):
             instructor_id = instructors[0].get("cruzid")
-            async with httpx.AsyncClient() as client:
-                instructor_resp = await client.get(
-                    f"{instructor_base_url}/{instructor_id}")
+            for i in range(3):  # Retry up to 3 times
+                try:
+                    async with httpx.AsyncClient() as client:
+                        instructor_resp = await client.get(
+                            f"{instructor_base_url}/{instructor_id}")
+                    if instructor_resp.status_code == 200:
+                        data = instructor_resp.json()
+                        instructor_name = data.get("givenname", [])[
+                            0] + " " + data.get("sn", [])[0]
+                        break
+                except Exception as e:
+                    print(f"Attempt failed with error: {e}")
+                    await asyncio.sleep(1)  # Wait a bit before retrying
+                    if i == 2:
+                        instructor_name = None
+            else:
+                instructor_name = None  # Null if all attempts fail
             data = instructor_resp.json()
             instructor_name = data.get("givenname", [])[
                 0] + " " + data.get("sn", [])[0]

@@ -16,9 +16,15 @@ async def embedd_text(text: str | None):
     async with sem:
         if text is None:
             return None
-        resp = await client.embeddings.create(
-            input=text, model='text-embedding-3-large')
-        return resp.data[0].embedding
+        for _ in range(3):
+            try:
+                resp = await client.embeddings.create(
+                    input=text, model='text-embedding-3-large')
+                return resp.data[0].embedding
+            except Exception as e:
+                print(f"Error: {e}, retrying...")
+                await asyncio.sleep(1)
+        return None
 
 
 async def post_process(datas: List[BaseDB], embedding_texts: List[str], full_texts: List[str], showBar=True):
