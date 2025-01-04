@@ -4,6 +4,7 @@ from src.models import UCSFCourseDB, BaseDB
 from typing import List
 from src.process import post_process
 import tqdm
+import httpx
 base_url = "https://catalog.ucsf.edu/course-catalog"
 subjects = {
     "anatomy": "Anatomy",
@@ -84,8 +85,9 @@ subjects = {
 }
 
 
-def fetch_course_info(url, subject):
-    resp = requests.get(url).text
+async def fetch_course_info(url, subject):
+    async with httpx.AsyncClient() as client:
+        resp = (await client.get(url)).text
     soup = BeautifulSoup(resp, 'html.parser')
 
     # Find all courseblock elements
@@ -132,7 +134,7 @@ async def main() -> List[BaseDB]:
     course_titles = []
     courses_db = []
     for key in tqdm.tqdm(subjects, desc="Fetching courses for UCSF"):
-        l = fetch_course_info(f"{base_url}/{key}", subjects[key])
+        l = await fetch_course_info(f"{base_url}/{key}", subjects[key])
         for db, title in l:
             course_titles.append(title)
             courses_db.append(db)
