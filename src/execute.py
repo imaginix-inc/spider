@@ -31,8 +31,11 @@ async def execute():
     tasks = []
     for spider in spiders:
         tasks.append(process_school(spider))
-    spend_time = await asyncio.gather(*tasks)
+    spend_time = await asyncio.gather(*tasks, return_exceptions=True)
     for (spider, time) in zip(spiders, spend_time):
-        print(f"{spider.school_name} spend {time} seconds")
+        if isinstance(time, Exception):
+            print(f"Error processing {spider.school_name}: {time}")
+        else:
+            print(f"{spider.school_name} spend {time} seconds")
 if __name__ == '__main__':
     asyncio.run(execute())
