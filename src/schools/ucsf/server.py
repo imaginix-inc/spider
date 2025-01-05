@@ -3,8 +3,11 @@ import requests
 from src.models import UCSFCourseDB, BaseDB
 from typing import List
 from src.process import post_process
-import tqdm
+from tqdm.asyncio import tqdm
 import httpx
+import aiohttp
+import asyncio
+
 base_url = "https://catalog.ucsf.edu/course-catalog"
 subjects = {
     "anatomy": "Anatomy",
@@ -86,58 +89,73 @@ subjects = {
 
 
 async def fetch_course_info(url, subject):
-    async with httpx.AsyncClient() as client:
-        resp = (await client.get(url)).text
-    soup = BeautifulSoup(resp, 'html.parser')
+    async with aiohttp.ClientSession() as session:
+        # Retry up to 3 times if request fail
+        for _ in range(3):
+            try:
+                async with session.get(url) as resp:
+                    resp_text = await resp.text()
+                    if resp_text:
+                        break
+            except Exception as ex:
+                print(ex)
+                continue
+        if not resp_text:
+            return []
+        soup = BeautifulSoup(resp_text, 'html.parser')
+        courseblocks = soup.find_all('div', class_='courseblock')
 
-    # Find all courseblock elements
-    courseblocks = soup.find_all('div', class_='courseblock')
+        courses = []
+        for block in courseblocks:
+            course_code = block.find('span', class_="detail-code").get_text(strip=True)
+            splitted_course_code = course_code.split(" ")
+            course_prefix = splitted_course_code[0]
+            course_number = splitted_course_code[-1]
 
-    courses = []
+            course_title = block.find('span', class_="detail-title").get_text(strip=True)
+            course_unit = block.find('span', class_="detail-hours_html").get_text(strip=True).split(" ")[0][1:]
+            course_term = block.find('span', class_="detail-offering").get_text(strip=True)
 
-    # Extract details from each courseblock
-    for block in courseblocks:
-        course_code = block.find(
-            'span', class_="detail-code").get_text(strip=True)
-        splitted_course_code = course_code.split(" ")
-        course_prefix = splitted_course_code[0]
-        course_number = splitted_course_code[-1]
+            instructor_blocks = block.select('div > p > span.skip-makebubbles > span > a')
+            course_instructor = instructor_blocks[0].get_text(strip=True) if instructor_blocks else None
 
-        course_title = block.find(
-            'span', class_="detail-title").get_text(strip=True)
-        course_unit = block.find(
-            'span', class_="detail-hours_html").get_text(strip=True).split(" ")[0][1:]
+            activity_tag = block.find('p', class_="detail-activities")
+            if activity_tag:
+                course_activities = ''.join(str(item).strip() for item in activity_tag.contents if not hasattr(item, 'contents')).strip()
+                course_description = activity_tag.find_parent('div').next_sibling.find('p').get_text(strip=True)
+            else:
+                course_activities, course_description = None, None
 
-        course_term = block.find(
-            'span', class_="detail-offering").get_text(strip=True)
+            course = UCSFCourseDB(
+                remark=course_description, term=course_term, units=course_unit,
+                activity=course_activities, prefix=course_prefix, number=course_number,
+                instructor_name=course_instructor, course_name=course_title, source_url=url,
+                subject=subject
+            )
+            courses.append((course, course_title))
 
-        course_instructor = block.select(
-            'div > p > span.skip-makebubbles > span > a')[0].get_text(strip=True)
+        return courses
 
-        activity_tag = block.find('p', class_="detail-activities")
-        course_activities = ''.join(str(item).strip(
-        ) for item in activity_tag.contents if not hasattr(item, 'contents')).strip()
-
-        course_description = activity_tag.find_parent(
-            'div').next_sibling.find('p').get_text(strip=True)
-
-        course = UCSFCourseDB(remark=course_description, term=course_term, units=course_unit,
-                              activity=course_activities, prefix=course_prefix, number=course_number,
-                              instructor_name=course_instructor, course_name=course_title, source_url=url,
-                              subject=subject)
-        courses.append((course, course_title))
-
-    return courses
-
-
-async def main() -> List[BaseDB]:
+async def main() -> List[UCSFCourseDB]:
     course_titles = []
     courses_db = []
-    for key in tqdm.tqdm(subjects, desc="Fetching courses for UCSF"):
-        l = await fetch_course_info(f"{base_url}/{key}", subjects[key])
-        for db, title in l:
-            course_titles.append(title)
-            courses_db.append(db)
-    print(course_titles)
+    tasks = []
+
+    async with aiohttp.ClientSession() as session:
+        for key, value in tqdm(subjects.items()):
+            url = f"{base_url}/{key}"
+            tasks.append(fetch_course_info(url, value))
+
+        results = await asyncio.gather(*tasks)
+
+        for l in results:
+            if not l:
+                continue
+            for db, title in l:
+                course_titles.append(title)
+                courses_db.append(db)
+
+    print(len(courses_db))
+    # Assuming post_process is also async
     courses_db = await post_process(courses_db, course_titles, course_titles)
     return courses_db

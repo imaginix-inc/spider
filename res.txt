@@ -1,3 +1,8 @@
-Insert 7895 data to uci database
-Insert 1366 data to ucla database
-Insert 1456 data to ucsc database
+Insert 4483 data to ucsd database
+Insert 913 data to ucla database
+Insert 7748 data to uci database
+Insert 3116 data to ucr database
+Insert 1513 data to ucsf database
+Insert 1455 data to ucsc database
+Insert 3851 data to usf database
+Insert 1417 data to ucr database
